@@ -1,6 +1,8 @@
 # Nomooz
 A mouse replacement for Niri (and other wlroots compositors)
 
+![Screenshot](./images/full-grid.png)
+
 ## How to compile it
 
 You need a Rust toolchain installed. Then:
