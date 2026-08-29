@@ -3,7 +3,7 @@ use std::path::PathBuf;
 pub fn cache_dir() -> PathBuf {
     let base = std::env::var("XDG_CACHE_HOME")
         .unwrap_or_else(|_| format!("{}/.cache", std::env::var("HOME").expect("HOME not set")));
-    PathBuf::from(base).join("nomooz")
+    PathBuf::from(base).join(env!("CARGO_PKG_NAME"))
 }
 
 pub fn cache_data(filename: &str, data: String) -> Result<(), std::io::Error> {
