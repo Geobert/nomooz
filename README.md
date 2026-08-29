@@ -53,6 +53,30 @@ After a first selection, press `Enter` to start a second one, then click. This h
 
 `Shift` + arrow (or Vim direction) switches the active display.
 
+## Configuration
+
+On first run, nomooz creates a default config file at `$XDG_CONFIG_HOME/nomooz/config.kdl`
+(or `~/.config/nomooz/config.kdl` if `XDG_CONFIG_HOME` is unset), using [KDL](https://kdl.dev)
+syntax. Edit it to customize the appearance:
+
+```kdl
+appearance {
+  font "Roboto"
+  text-color "#ffffffff"
+  text-background-color "#1a1a1aff"
+  grid-cells-color "#ffffff20"
+  grid-lines-color "#000000a0"
+  background-color "#000000a0"
+}
+```
+
+- `font`: font family name, resolved via fontconfig
+- `text-color` / `text-background-color`: label text and the disc behind it
+- `grid-cells-color` / `grid-lines-color`: selection grid cells and their borders
+- `background-color`: overall screen dimming
+
+Colors are `#rrggbbaa` hex strings.
+
 ## Niri configuration recommendation
 
 If you’re using niri with `focus-follows-mouse` enabled, add `max-scroll-amount="0%"` to avoid unwanted view scrolling when the synthetic pointer passes over a window that’s only partially on screen:

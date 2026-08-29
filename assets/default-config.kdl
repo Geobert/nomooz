@@ -1,0 +1,8 @@
+appearance {
+  font "Roboto"
+  text-color "#ffffffff"
+  text-background-color "#1a1a1aff"
+  grid-cells-color "#ffffff20"
+  grid-lines-color "#000000a0"
+  background-color "#000000a0"
+}

@@ -12,7 +12,6 @@ use smithay_client_toolkit::{
 };
 use wayland_client::{QueueHandle, protocol::wl_shm};
 
-use crate::color_rgba::ColorRGBA;
 use crate::draw_grid::{draw_grid, draw_grid_labels};
 
 impl MainLayer {
@@ -67,13 +66,9 @@ impl MainLayer {
 
             let sel = &self.selection[self.current_selection_index];
 
-            let lines_color = ColorRGBA::new(0, 0, 0, 192);
-            let active_text_color = ColorRGBA::new(255, 255, 255, 255);
-            let cell_color = ColorRGBA::new(255, 255, 255, 32);
-            let circle_color = ColorRGBA::new(0, 0, 0, 192);
-
             // Quickly darken all background
-            let dark_background: [u8; 4] = ColorRGBA::new(0, 0, 0, 192).into();
+            // let dark_background: [u8; 4] = ColorRGBA::new(0, 0, 0, 192).into();
+            let dark_background: [u8; 4] = self.theme.background_color.into();
             {
                 canvas.chunks_exact_mut(4).for_each(|chunk| {
                     let array: &mut [u8; 4] = chunk.try_into().unwrap();
@@ -141,7 +136,7 @@ impl MainLayer {
                 zone_y,
                 zone_width,
                 zone_height,
-                cell_color,
+                self.theme.grid_cells_color,
                 &mut canvas,
                 width as usize,
             );
@@ -153,7 +148,7 @@ impl MainLayer {
                 zone_height,
                 cells_count_x,
                 cells_count_y,
-                lines_color,
+                self.theme.grid_lines_color,
                 &mut canvas,
                 width as usize,
             );
@@ -167,8 +162,8 @@ impl MainLayer {
                 cells_count_y,
                 cell_labels,
                 32.0,
-                active_text_color,
-                circle_color,
+                self.theme.text_color,
+                self.theme.text_background_color,
                 &self.text_renderer,
                 &mut canvas,
                 width as usize,

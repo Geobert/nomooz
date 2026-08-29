@@ -14,6 +14,8 @@ mod text_renderer;
 mod virtual_pointer;
 mod xkb_parser;
 mod zone;
+mod configuration;
+mod theme;
 
 use smithay_client_toolkit::{
     compositor::CompositorState,
@@ -26,14 +28,17 @@ use smithay_client_toolkit::{
 use wayland_client::{Connection, globals::registry_queue_init};
 
 use crate::{
-    cache::load_cache, main_layer::*, text_renderer::TextRenderer,
-    virtual_pointer::VirtualPointerManager, xkb_parser::XkbParser,
+    cache::load_cache, configuration::Configuration, main_layer::*, text_renderer::TextRenderer, theme::Theme, virtual_pointer::VirtualPointerManager, xkb_parser::XkbParser,
 };
 
 fn main() {
     env_logger::init();
 
-    let text_renderer = TextRenderer::new("Roboto-Regular");
+
+    let config = Configuration::load_config().expect("Can’t load configuration");
+    let theme = Theme::from_config(config).expect("Can’t init theme");
+
+    let text_renderer = TextRenderer::new(&theme.font);
 
     // Try to load the last keymap.
     let mut xkb_parser = XkbParser::new();
@@ -78,6 +83,7 @@ fn main() {
         layer,
         text_renderer,
         xkb_parser,
+        theme
     );
 
     event_queue.roundtrip(&mut main_layer).unwrap();

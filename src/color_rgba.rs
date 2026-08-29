@@ -1,3 +1,5 @@
+use std::str::from_utf8;
+
 #[derive(Debug, Clone, Copy)]
 pub struct ColorRGBA {
     given_r: u8,
@@ -24,6 +26,21 @@ impl ColorRGBA {
             g: rendered_g,
             b: rendered_b,
             a,
+        }
+    }
+
+    pub fn from_hex_string(value: &str) -> Result<ColorRGBA, Box<dyn std::error::Error>> {
+        if value.starts_with("#") && value.len()==9 {
+            let value = &value[1..];
+            let mut iter = value.as_bytes().chunks(2);
+            let r = u8::from_str_radix( from_utf8(iter.next().ok_or("Bad format")?)?, 16)?;
+            let g = u8::from_str_radix( from_utf8(iter.next().ok_or("Bad format")?)?, 16)?;
+            let b = u8::from_str_radix( from_utf8(iter.next().ok_or("Bad format")?)?, 16)?;
+            let a = u8::from_str_radix( from_utf8(iter.next().ok_or("Bad format")?)?, 16)?;
+
+            Ok(ColorRGBA::new(r, g, b, a))
+        } else {
+            Err("Invalid color format".into())
         }
     }
 

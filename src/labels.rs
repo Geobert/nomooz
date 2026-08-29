@@ -20,7 +20,7 @@ impl Labels {
                     .iter()
                     .map(|&col| {
                         format!(
-                            "{}         {}",
+                            "{}   {}",
                             xkb_parser.key_code_to_char(col),
                             xkb_parser.key_code_to_char(line)
                         )

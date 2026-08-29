@@ -19,8 +19,7 @@ use wayland_client::{
 };
 
 use crate::{
-    labels::Labels, selection::Selection, text_renderer::TextRenderer,
-    virtual_pointer::{ClickButton, VirtualPointer, VirtualPointerManager}, xkb_parser::XkbParser,
+    labels::Labels, selection::Selection, text_renderer::TextRenderer, theme::Theme, virtual_pointer::{ClickButton, VirtualPointer, VirtualPointerManager}, xkb_parser::XkbParser,
 };
 
 /// Max delay between two clicks for a double click.
@@ -48,6 +47,7 @@ pub struct MainLayer {
     pub click_button: Option<ClickButton>, // Button used for the click.
     pub double_click: bool, // True if this is a double click.
     pub pending_click: Option<(ClickButton, u32)>, // A click waiting for maybe a second one.
+    pub theme: Theme,
     pub text_renderer: TextRenderer,
     pub xkb_parser: XkbParser,
     pub selection: Vec<Selection>,
@@ -68,6 +68,7 @@ impl MainLayer {
         layer: LayerSurface,
         text_renderer: TextRenderer,
         xkb_parser: XkbParser,
+        theme: Theme,
     ) -> Self {
         MainLayer {
             registry_state: RegistryState::new(globals),
@@ -102,6 +103,7 @@ impl MainLayer {
             current_selection_index: 0,
             labels: None,
             current_output: None,
+            theme
         }
     }
 
