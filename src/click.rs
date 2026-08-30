@@ -3,7 +3,6 @@ use std::{thread, time::Duration};
 use wayland_client::{Connection, QueueHandle};
 
 use crate::{
-    geometry::{Coordinate, Size},
     main_layer::MainLayer,
     virtual_pointer::{ClickButton, VirtualPointer},
     zone::Zone,
@@ -113,21 +112,8 @@ pub fn execute_click(main_layer: &MainLayer, qh: &QueueHandle<MainLayer>, conn: 
                         (info.logical_position, info.logical_size)
                     {
                         // Use this selection’s own screen size.
-                        let cell_width = width as u32 / 10;
-                        let cell_height = height as u32 / 30;
-                        let column = selection.selected_column.unwrap();
-                        let line = selection.selected_line.unwrap();
-
-                        let base_zone = Zone {
-                            position: Coordinate {
-                                x: column * cell_width,
-                                y: line * cell_height,
-                            },
-                            size: Size {
-                                width: cell_width,
-                                height: cell_height,
-                            },
-                        };
+                        let base_zone =
+                            Zone::from_selection(selection, width as u32, height as u32);
                         let active_zone = if let Some(zone) = selection.zones.last() {
                             *zone
                         } else {

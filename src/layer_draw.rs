@@ -1,5 +1,5 @@
 use crate::{
-    draw_geometry::draw_filled_rectangle, geometry::{Coordinate, Size}, labels::Labels,
+    draw_geometry::draw_filled_rectangle, labels::Labels,
     main_layer::MainLayer, zone::Zone,
 };
 
@@ -103,17 +103,8 @@ impl MainLayer {
                 ),
 
                 // Only the zone: no grid, no labels.
-                (Some(column), Some(line)) => {
-                    let base_zone = Zone {
-                        position: Coordinate {
-                            x: column * (width / 10),
-                            y: line * (height / 30),
-                        },
-                        size: Size {
-                            width: width / 10,
-                            height: height / 30,
-                        },
-                    };
+                (Some(_column), Some(_line)) => {
+                    let base_zone = Zone::from_selection(sel, width, height);
                     let active_zone = if let Some(zone) = sel.zones.last() {
                         *zone
                     } else {

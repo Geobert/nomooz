@@ -7,8 +7,11 @@
    viewBox="0 0 120 42"
    version="1.1"
    id="svg1"
-   sodipodi:docname="bitmap.svg"
+   sodipodi:docname="keyboard.svg"
    inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   inkscape:export-filename="keyboard"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -23,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="0.97726574"
-     inkscape:cx="396.51446"
-     inkscape:cy="315.67668"
+     inkscape:zoom="3.909063"
+     inkscape:cx="314.14178"
+     inkscape:cy="119.08225"
      inkscape:window-width="3440"
      inkscape:window-height="1386"
      inkscape:window-x="0"
@@ -79,6 +82,24 @@
        width="39.874023"
        height="25.69886"
        id="rect109" />
+    <rect
+       x="177.34253"
+       y="107.79244"
+       width="39.874023"
+       height="25.69886"
+       id="rect109-7" />
+    <rect
+       x="177.34253"
+       y="107.79244"
+       width="39.874023"
+       height="25.69886"
+       id="rect109-91" />
+    <rect
+       x="177.34253"
+       y="107.79244"
+       width="39.874023"
+       height="25.69886"
+       id="rect109-91-6" />
   </defs>
   <g
      inkscape:label="Layer 1"
@@ -289,7 +310,7 @@
        height="6.9585414"
        rx="0.79374999"
        stroke-width="0.5"
-       style="color:#0b0b0b;font-weight:400;font-size:16px;font-family:anthropic-sans, '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;dominant-baseline:auto;text-anchor:start;fill:#e6e6e6;stroke:#979797;stroke-width:0.132292px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="color:#0b0b0b;font-weight:400;font-size:16px;font-family:anthropic-sans, '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;dominant-baseline:auto;text-anchor:start;fill:#ff9955;stroke:#979797;stroke-width:0.132292px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        id="rect46" />
     <rect
        x="76.094193"
@@ -673,7 +694,35 @@
        transform="matrix(0.26458333,0,0,0.26458333,8.8559198,-10.42308)"><tspan
          x="177.3418"
          y="126.66794"
-         id="tspan11">←</tspan></text>
+         id="tspan2">←</tspan></text>
+    <g
+       id="g1"
+       transform="matrix(0.82276539,0,0,0.82276539,-42.933144,-8.0410944)">
+      <g
+         id="layer1-7"
+         transform="rotate(45,143.52292,47.030864)">
+        <text
+           xml:space="preserve"
+           id="text109-09"
+           style="font-size:21.3333px;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect109-91);display:inline;fill:#4d4d4d;stroke:#343434;stroke-width:0;stroke-dasharray:none;stroke-opacity:1"
+           transform="matrix(0.26458333,0,0,0.26458333,74.239236,3.4522615)"><tspan
+             x="177.3418"
+             y="126.66794"
+             id="tspan3">→←</tspan></text>
+      </g>
+      <g
+         id="layer1-7-1"
+         transform="rotate(-45,121.82398,14.320285)">
+        <text
+           xml:space="preserve"
+           id="text109-09-8"
+           style="font-size:21.3333px;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect109-91-6);display:inline;fill:#4d4d4d;stroke:#343434;stroke-width:0;stroke-dasharray:none;stroke-opacity:1"
+           transform="matrix(0.26458333,0,0,0.26458333,74.239236,3.4522615)"><tspan
+             x="177.3418"
+             y="126.66794"
+             id="tspan4">→←</tspan></text>
+      </g>
+    </g>
     <text
        xml:space="preserve"
        id="text109-2"
@@ -681,7 +730,7 @@
        transform="matrix(0,-0.26458333,0.26458333,0,34.201214,70.58888)"><tspan
          x="177.3418"
          y="126.66794"
-         id="tspan12">←</tspan></text>
+         id="tspan5">←</tspan></text>
     <text
        xml:space="preserve"
        id="text109-8"
@@ -689,7 +738,7 @@
        transform="matrix(0,0.26458333,-0.26458333,0,105.52044,-27.986575)"><tspan
          x="177.3418"
          y="126.66794"
-         id="tspan13">←</tspan></text>
+         id="tspan6">←</tspan></text>
     <text
        xml:space="preserve"
        id="text109-0"
@@ -699,7 +748,7 @@
        inkscape:transform-center-y="-5.2009582"><tspan
          x="177.3418"
          y="126.66794"
-         id="tspan14">←</tspan></text>
+         id="tspan7">←</tspan></text>
     <rect
        style="fill:#ff0000;stroke:#343434;stroke-width:0;stroke-dasharray:none;stroke-opacity:1"
        id="rect110"
@@ -730,9 +779,9 @@
        transform="matrix(0.26458333,0,0,0.26458333,1.6847118,-27.718612)"><tspan
          x="396.29037"
          y="130.42773"
-         id="tspan16"><tspan
+         id="tspan9"><tspan
            style="fill:#4d4d4d"
-           id="tspan15">Cancel</tspan></tspan></text>
+           id="tspan8">Cancel</tspan></tspan></text>
     <text
        xml:space="preserve"
        id="text110-8"
@@ -742,13 +791,13 @@
        transform="matrix(0.26458333,0,0,0.26458333,0.33590676,-12.47784)"><tspan
          x="401.22819"
          y="124.51367"
-         id="tspan18"><tspan
+         id="tspan11"><tspan
            style="fill:#4d4d4d"
-           id="tspan17">Next </tspan></tspan><tspan
+           id="tspan10">Next </tspan></tspan><tspan
          x="391.12468"
          y="136.18033"
-         id="tspan20"><tspan
+         id="tspan13"><tspan
            style="fill:#4d4d4d"
-           id="tspan19">selection</tspan></tspan></text>
+           id="tspan12">selection</tspan></tspan></text>
   </g>
 </svg>

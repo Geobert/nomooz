@@ -25,25 +25,23 @@ Mod+M hotkey-overlay-title="Launch nomooz (keyboard mouse overlay)" { spawn "~/p
 
 Launching the binary shows a grid over your active display.
 
-#### Select a grid cell
+![Shortcuts](./images/keyboard.svg)
+
+#### Select a cell
 
 Each cell is labeled with its shortcut. To select the cell labeled "f y", press "f" then "y".
 
-#### Select a more precise location
+#### Refine the selection
 
-Once a cell is selected, use the arrow keys (or Vim direction keys) to shrink the selection: each press halves it in the given direction.
-
-#### Cancel last selection step
-
-`Backspace` reverts the last selection step. Can be used repeatedly.
+- Arrow keys (or Vim direction keys) move the selection by its own size.
+- The dedicated “shrink” key (converging arrows on the diagram) halves the selection, centered. Repeat to keep narrowing it down to a single pixel.
+- `Backspace` reverts the last step (move, shrink, or cell selection). Can be used repeatedly.
 
 #### Produce a click
 
 - `Space`: left click at the center of the current selection
 - The three bottom-row keys to the right of space (physical position, independent of your keyboard layout): left, middle, right click
 - Press the same click key twice quickly for a double click (single selection only)
-
-![Shortcuts](./images/keyboard.svg)
 
 #### Selection and drag’n drop
 

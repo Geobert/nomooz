@@ -8,9 +8,14 @@ use wayland_client::{
 };
 
 use crate::{
-    cache::cache_data, direction::{find_output_in_direction, Direction},
-    geometry::{Coordinate, Size}, labels::Labels, main_layer::{DOUBLE_CLICK_WINDOW_MS, MainLayer},
-    selection::Selection, virtual_pointer::ClickButton, zone::Zone,
+    cache::cache_data,
+    direction::{Direction, find_output_in_direction},
+    geometry::{Coordinate, Size},
+    labels::Labels,
+    main_layer::{DOUBLE_CLICK_WINDOW_MS, MainLayer},
+    selection::Selection,
+    virtual_pointer::ClickButton,
+    zone::Zone,
 };
 
 impl KeyboardHandler for MainLayer {
@@ -53,6 +58,7 @@ impl KeyboardHandler for MainLayer {
         let mut need_draw = false;
 
         log::trace!("Key press: {event:?} {}", event.raw_code);
+        // println!("Key press: {event:?} {}", event.raw_code);
 
         if !self.modifiers.shift {
             // press 'esc' to exit
@@ -80,12 +86,13 @@ impl KeyboardHandler for MainLayer {
 
             if let Some(button) = explicit_button {
                 if self.selection.len() == 1 {
-                    let is_repeat_click = if let Some((pending_button, pending_time)) = self.pending_click {
-                        pending_button == button
-                            && event.time.saturating_sub(pending_time) <= DOUBLE_CLICK_WINDOW_MS
-                    } else {
-                        false
-                    };
+                    let is_repeat_click =
+                        if let Some((pending_button, pending_time)) = self.pending_click {
+                            pending_button == button
+                                && event.time.saturating_sub(pending_time) <= DOUBLE_CLICK_WINDOW_MS
+                        } else {
+                            false
+                        };
 
                     if is_repeat_click {
                         log::debug!("Double click");
@@ -127,7 +134,10 @@ impl KeyboardHandler for MainLayer {
             if event.keysym == Keysym::BackSpace {
                 log::debug!("Undo");
                 self.pending_click = None;
-                if !self.selection[self.current_selection_index].zones.is_empty() {
+                if !self.selection[self.current_selection_index]
+                    .zones
+                    .is_empty()
+                {
                     self.selection[self.current_selection_index].zones.pop();
                     need_draw = true;
                 } else if !self.selection[self.current_selection_index]
@@ -172,7 +182,29 @@ impl KeyboardHandler for MainLayer {
                     }
                 }
             } else {
-                // Now cut the cell in half.
+                if event.raw_code == 23 {
+                    let current_zone = if let Some(zone) =
+                        self.selection[self.current_selection_index].zones.last()
+                    {
+                        *zone
+                    } else {
+                        Zone::from_selection(
+                            &self.selection[self.current_selection_index],
+                            self.width,
+                            self.height,
+                        )
+                    };
+
+                    if let Some(new_zone) = current_zone.halved() {
+                        self.selection[self.current_selection_index]
+                            .zones
+                            .push(new_zone);
+
+                        need_draw = true;
+                    }
+                }
+
+                // Try to move the current zone (and create it if it doen’t exist
                 let direction = if event.raw_code == 35 || event.keysym == Keysym::Left {
                     Some(Direction::Left)
                 } else if event.raw_code == 38 || event.keysym == Keysym::Right {
@@ -186,36 +218,33 @@ impl KeyboardHandler for MainLayer {
                 };
 
                 if let Some(direction) = direction {
-                    let column = self.selection[self.current_selection_index]
-                        .selected_column
-                        .unwrap();
-                    let line = self.selection[self.current_selection_index]
-                        .selected_line
-                        .unwrap();
-                    let cell_width = self.width / 10;
-                    let cell_height = self.height / 30;
-                    let base_zone = Zone {
-                        position: Coordinate {
-                            x: column * cell_width,
-                            y: line * cell_height,
-                        },
-                        size: Size {
-                            width: cell_width,
-                            height: cell_height,
-                        },
+                    let current_zone = if let Some(zone) =
+                        self.selection[self.current_selection_index].zones.last()
+                    {
+                        *zone
+                    } else {
+                        Zone::from_selection(
+                            &self.selection[self.current_selection_index],
+                            self.width,
+                            self.height,
+                        )
                     };
 
-                    let current_zone =
-                        if let Some(zone) = self.selection[self.current_selection_index].zones.last() {
-                            *zone
-                        } else {
-                            base_zone
-                        };
+                    if let Some(new_zone) = current_zone.moved(direction, self.width, self.height) {
+                        self.selection[self.current_selection_index]
+                            .zones
+                            .push(new_zone);
+                    } else {
+                        if self.selection[self.current_selection_index]
+                            .zones
+                            .is_empty()
+                        {
+                            self.selection[self.current_selection_index]
+                                .zones
+                                .push(current_zone);
+                        }
+                    }
 
-                    let new_zone = current_zone.halved(direction);
-                    self.selection[self.current_selection_index]
-                        .zones
-                        .push(new_zone);
                     need_draw = true;
                 }
             }
@@ -241,7 +270,9 @@ impl KeyboardHandler for MainLayer {
                         log::debug!("Current output: {current_info:?}");
                         let outputs = self.outputs();
                         log::debug!("Known outputs: {outputs:?}");
-                        if let Some(output) = find_output_in_direction(&current_info, &outputs, direction) {
+                        if let Some(output) =
+                            find_output_in_direction(&current_info, &outputs, direction)
+                        {
                             log::debug!("Target output found: {output:?}");
                             self.switch_output(qh, &output);
                         } else {
