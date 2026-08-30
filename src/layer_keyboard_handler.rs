@@ -10,7 +10,6 @@ use wayland_client::{
 use crate::{
     cache::cache_data,
     direction::{Direction, find_output_in_direction},
-    geometry::{Coordinate, Size},
     labels::Labels,
     main_layer::{DOUBLE_CLICK_WINDOW_MS, MainLayer},
     selection::Selection,

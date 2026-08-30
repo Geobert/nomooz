@@ -70,78 +70,83 @@ fn send_double_click(pointer: &VirtualPointer, conn: &Connection, button: ClickB
 
 /// Do the click chosen by the user: press, move if needed, release.
 pub fn execute_click(main_layer: &MainLayer, qh: &QueueHandle<MainLayer>, conn: &Connection) {
-    if let Some(button) = main_layer.click_button {
-        let no_selection = main_layer.selection.len() == 1
-            && main_layer.selection[0].selected_column.is_none();
+    let no_selection = main_layer.selection.len() == 1
+        && main_layer.selection[0].selected_column.is_none();
 
-        if no_selection {
-            // No selection: click where the pointer already is.
-            let pointer = main_layer.create_pointer(qh);
-            pointer.press(button);
-            let _ = conn.flush();
-            // Some apps need a short hold to detect the click.
-            thread::sleep(Duration::from_millis(CLICK_HOLD_MS));
-            pointer.release(button);
-            let _ = conn.flush();
-
-            if main_layer.double_click {
-                send_double_click(&pointer, conn, button);
-            }
-
+    if no_selection {
+        let Some(button) = main_layer.click_button else {
+            // Nothing selected and no click requested: nothing to do.
             return;
+        };
+
+        // No selection: click where the pointer already is.
+        let pointer = main_layer.create_pointer(qh);
+        pointer.press(button);
+        let _ = conn.flush();
+        // Some apps need a short hold to detect the click.
+        thread::sleep(Duration::from_millis(CLICK_HOLD_MS));
+        pointer.release(button);
+        let _ = conn.flush();
+
+        if main_layer.double_click {
+            send_double_click(&pointer, conn, button);
         }
 
-        let pointer = main_layer.create_pointer(qh);
-        let (total_width, total_height) = main_layer.total_layout_size();
-        let extent = (total_width as u32, total_height as u32);
-        let mut previous_position = (extent.0 / 2, extent.1 / 2);
-        let output_rects: Vec<(i32, i32, i32, i32)> = main_layer
-            .outputs()
-            .into_iter()
-            .filter_map(|(_, info)| {
-                let position = info.logical_position?;
-                let size = info.logical_size?;
-                Some((position.0, position.1, size.0, size.1))
-            })
-            .collect();
+        return;
+    }
 
-        for (index, selection) in main_layer.selection.iter().enumerate() {
-            if let Some(output) = selection.output.clone() {
-                if let Some(info) = main_layer.output_info(&output) {
-                    if let (Some((pos_x, pos_y)), Some((width, height))) =
-                        (info.logical_position, info.logical_size)
-                    {
-                        // Use this selection’s own screen size.
-                        let base_zone =
-                            Zone::from_selection(selection, width as u32, height as u32);
-                        let active_zone = if let Some(zone) = selection.zones.last() {
-                            *zone
-                        } else {
-                            base_zone
-                        };
+    let pointer = main_layer.create_pointer(qh);
+    let (total_width, total_height) = main_layer.total_layout_size();
+    let extent = (total_width as u32, total_height as u32);
+    let mut previous_position = (extent.0 / 2, extent.1 / 2);
+    let output_rects: Vec<(i32, i32, i32, i32)> = main_layer
+        .outputs()
+        .into_iter()
+        .filter_map(|(_, info)| {
+            let position = info.logical_position?;
+            let size = info.logical_size?;
+            Some((position.0, position.1, size.0, size.1))
+        })
+        .collect();
 
-                        // Click the center of the active zone.
-                        let (local_x, local_y) = (
-                            active_zone.position.x + active_zone.size.width / 2,
-                            active_zone.position.y + active_zone.size.height / 2,
-                        );
+    for (index, selection) in main_layer.selection.iter().enumerate() {
+        if let Some(output) = selection.output.clone() {
+            if let Some(info) = main_layer.output_info(&output) {
+                if let (Some((pos_x, pos_y)), Some((width, height))) =
+                    (info.logical_position, info.logical_size)
+                {
+                    // Use this selection’s own screen size.
+                    let base_zone =
+                        Zone::from_selection(selection, width as u32, height as u32);
+                    let active_zone = if let Some(zone) = selection.zones.last() {
+                        *zone
+                    } else {
+                        base_zone
+                    };
 
-                        // Convert to global coordinates.
-                        let global_x = (pos_x + local_x as i32) as u32;
-                        let global_y = (pos_y + local_y as i32) as u32;
+                    // Click the center of the active zone.
+                    let (local_x, local_y) = (
+                        active_zone.position.x + active_zone.size.width / 2,
+                        active_zone.position.y + active_zone.size.height / 2,
+                    );
 
-                        log::debug!("Moving");
-                        stepped_absolute_move(
-                            conn,
-                            &pointer,
-                            previous_position,
-                            (global_x, global_y),
-                            extent,
-                            &output_rects,
-                        );
-                        previous_position = (global_x, global_y);
+                    // Convert to global coordinates.
+                    let global_x = (pos_x + local_x as i32) as u32;
+                    let global_y = (pos_y + local_y as i32) as u32;
 
-                        if index == 0 {
+                    log::debug!("Moving");
+                    stepped_absolute_move(
+                        conn,
+                        &pointer,
+                        previous_position,
+                        (global_x, global_y),
+                        extent,
+                        &output_rects,
+                    );
+                    previous_position = (global_x, global_y);
+
+                    if index == 0 {
+                        if let Some(button) = main_layer.click_button {
                             log::debug!("Button held down");
                             pointer.press(button);
                             let _ = conn.flush();
@@ -150,16 +155,21 @@ pub fn execute_click(main_layer: &MainLayer, qh: &QueueHandle<MainLayer>, conn: 
                 }
             }
         }
+    }
 
-        // Wait a bit before release, like a real click.
-        thread::sleep(Duration::from_millis(CLICK_HOLD_MS));
-        log::debug!("Click released");
-        pointer.release(button);
-        let _ = conn.flush();
+    let Some(button) = main_layer.click_button else {
+        // No click requested (e.g. Esc): the pointer was moved, nothing else to do.
+        return;
+    };
 
-        if main_layer.double_click {
-            log::debug!("Second click (double click)");
-            send_double_click(&pointer, conn, button);
-        }
+    // Wait a bit before release, like a real click.
+    thread::sleep(Duration::from_millis(CLICK_HOLD_MS));
+    log::debug!("Click released");
+    pointer.release(button);
+    let _ = conn.flush();
+
+    if main_layer.double_click {
+        log::debug!("Second click (double click)");
+        send_double_click(&pointer, conn, button);
     }
 }
