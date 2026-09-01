@@ -72,42 +72,48 @@ impl KeyboardHandler for MainLayer {
                 self.exit = true;
             }
 
-            // 50/51/52 = left/middle/right click, double click included.
-            let explicit_button = if event.raw_code == 50 {
-                Some(ClickButton::Left)
-            } else if event.raw_code == 51 {
-                Some(ClickButton::Middle)
-            } else if event.raw_code == 52 {
-                Some(ClickButton::Right)
-            } else {
-                None
-            };
+            let selection = &self.selection[self.current_selection_index];
+            if selection.selected_column.is_some()
+                && selection.selected_line.is_some()
+            {
+                // 50/51/52 = left/middle/right click, double click included.
+                let explicit_button = if event.raw_code == 50 {
+                    Some(ClickButton::Left)
+                } else if event.raw_code == 51 {
+                    Some(ClickButton::Middle)
+                } else if event.raw_code == 52 {
+                    Some(ClickButton::Right)
+                } else {
+                    None
+                };
 
-            if let Some(button) = explicit_button {
-                if self.selection.len() == 1 {
-                    let is_repeat_click =
-                        if let Some((pending_button, pending_time)) = self.pending_click {
+                if let Some(button) = explicit_button {
+                    if self.selection.len() == 1 {
+                        let is_repeat_click = if let Some((pending_button, pending_time)) =
+                            self.pending_click
+                        {
                             pending_button == button
                                 && event.time.saturating_sub(pending_time) <= DOUBLE_CLICK_WINDOW_MS
                         } else {
                             false
                         };
 
-                    if is_repeat_click {
-                        log::debug!("Double click");
-                        self.click_button = Some(button);
-                        self.double_click = true;
-                        self.pending_click = None;
-                        self.exit = true;
+                        if is_repeat_click {
+                            log::debug!("Double click");
+                            self.click_button = Some(button);
+                            self.double_click = true;
+                            self.pending_click = None;
+                            self.exit = true;
+                        } else {
+                            log::debug!("Click pending (waiting for a possible double click)");
+                            self.pending_click = Some((button, event.time));
+                        }
                     } else {
-                        log::debug!("Click pending (waiting for a possible double click)");
-                        self.pending_click = Some((button, event.time));
+                        log::debug!("Final click (multi-selection, immediate)");
+                        self.click_button = Some(button);
+                        self.double_click = false;
+                        self.exit = true;
                     }
-                } else {
-                    log::debug!("Final click (multi-selection, immediate)");
-                    self.click_button = Some(button);
-                    self.double_click = false;
-                    self.exit = true;
                 }
             }
 
