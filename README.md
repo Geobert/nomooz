@@ -25,8 +25,6 @@ Mod+M hotkey-overlay-title="Launch nomooz (keyboard mouse overlay)" { spawn "~/p
 
 Launching the binary shows a grid over your active display.
 
-![Shortcuts](./images/keyboard.svg)
-
 #### Select a cell
 
 Each cell is labeled with its shortcut. To select the cell labeled "f y", press "f" then "y".
