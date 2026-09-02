@@ -80,9 +80,7 @@ impl Zone {
         }
     }
 
-    pub fn from_selection(selection: &Selection, display_width: u32, display_height: u32) -> Self {
-        let column = selection.selected_column.unwrap();
-        let line = selection.selected_line.unwrap();
+    pub fn from_column_line(column: u32, line: u32, display_width: u32, display_height: u32) -> Self {
         let cell_width = display_width / 10;
         let cell_height = display_height / 30;
         Self {
@@ -93,6 +91,30 @@ impl Zone {
             size: Size {
                 width: cell_width,
                 height: cell_height,
+            },
+        }
+    }
+
+    pub fn from_selection(selection: &Selection, display_width: u32, display_height: u32) -> Self {
+        let column = selection.selected_column.unwrap();
+        let line = selection.selected_line.unwrap();
+        let division = selection.selected_division.unwrap();
+
+        let division_line = division / 10;
+        let division_column = division % 10;
+        let cell_width = display_width / 10;
+        let cell_height = display_height / 30;
+        let sub_width = cell_width / 10;
+        let sub_height = cell_height / 3;
+
+        Self {
+            position: Coordinate {
+                x: column * cell_width + division_column * sub_width,
+                y: line * cell_height + division_line * sub_height,
+            },
+            size: Size {
+                width: sub_width,
+                height: sub_height,
             },
         }
     }

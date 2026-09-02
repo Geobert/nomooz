@@ -97,6 +97,7 @@ impl MainLayer {
             selection: vec![Selection {
                 selected_column: None,
                 selected_line: None,
+                selected_division: None,
                 zones: Vec::new(),
                 output: None,
             }],

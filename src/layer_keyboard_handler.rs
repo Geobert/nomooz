@@ -17,6 +17,82 @@ use crate::{
     zone::Zone,
 };
 
+impl MainLayer {
+    fn handle_division_selection_and_confirm(&mut self, event: &KeyEvent, click: bool) -> bool {
+        for (key_line, first_key) in vec![16, 30, 44].iter().enumerate() {
+            for i in 0..10 {
+                if event.raw_code == first_key + i {
+                    let choice = key_line as u32 * 10 + i;
+                    log::debug!("Division selected: {choice}");
+                    // println!("Division selected: {choice}");
+                    self.selection[self.current_selection_index].selected_division = Some(choice);
+                    if click {
+                        log::debug!("Final left click");
+                        self.click_button = Some(ClickButton::Left);
+                        self.double_click = false;
+                        self.exit = true;
+                    }
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    fn handle_line_selection_and_confirm(&mut self, event: &KeyEvent) -> bool {
+        for (key_line, first_key) in [16, 30, 44].iter().enumerate() {
+            for i in 0..10 {
+                if event.raw_code == first_key + i {
+                    let choice = key_line as u32 * 10 + i;
+                    log::debug!("Line selected: {choice}");
+                    self.selection[self.current_selection_index].selected_line = Some(choice);
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    fn handle_column_selection_and_confirm(&mut self, event: &KeyEvent) -> bool {
+        for i in 0..10 {
+            if event.raw_code == 30 + i {
+                log::debug!("Column selected: {i}");
+                self.selection[self.current_selection_index].selected_column = Some(i);
+                return true;
+            }
+        }
+        false
+    }
+
+    fn handle_cancel_and_confirm(&mut self, event: &KeyEvent) -> bool {
+        let selection = &mut self.selection[self.current_selection_index];
+        if event.keysym == Keysym::BackSpace {
+            log::debug!("Undo");
+            self.pending_click = None;
+            if !selection
+                .zones
+                .is_empty()
+            {
+                selection.zones.pop();
+                return true;
+            } else if !selection
+                .selected_line
+                .is_none()
+            {
+                selection.selected_line = None;
+                return true;
+            } else if !selection
+                .selected_column
+                .is_none()
+            {
+                selection.selected_column = None;
+                return true;
+            }
+        }
+        false
+    }
+}
+
 impl KeyboardHandler for MainLayer {
     fn enter(
         &mut self,
@@ -72,62 +148,61 @@ impl KeyboardHandler for MainLayer {
                 self.exit = true;
             }
 
+            // Temporary disabled
             let selection = &self.selection[self.current_selection_index];
-            if selection.selected_column.is_some()
-                && selection.selected_line.is_some()
-            {
-                // 50/51/52 = left/middle/right click, double click included.
-                let explicit_button = if event.raw_code == 50 {
-                    Some(ClickButton::Left)
-                } else if event.raw_code == 51 {
-                    Some(ClickButton::Middle)
-                } else if event.raw_code == 52 {
-                    Some(ClickButton::Right)
-                } else {
-                    None
-                };
+            // if selection.selected_column.is_some()
+            //     && selection.selected_line.is_some()
+            // {
+            //     // 50/51/52 = left/middle/right click, double click included.
+            //     let explicit_button = if event.raw_code == 50 {
+            //         Some(ClickButton::Left)
+            //     } else if event.raw_code == 51 {
+            //         Some(ClickButton::Middle)
+            //     } else if event.raw_code == 52 {
+            //         Some(ClickButton::Right)
+            //     } else {
+            //         None
+            //     };
+            //
+            //     if let Some(button) = explicit_button {
+            //         if self.selection.len() == 1 {
+            //             let is_repeat_click = if let Some((pending_button, pending_time)) =
+            //                 self.pending_click
+            //             {
+            //                 pending_button == button
+            //                     && event.time.saturating_sub(pending_time) <= DOUBLE_CLICK_WINDOW_MS
+            //             } else {
+            //                 false
+            //             };
+            //
+            //             if is_repeat_click {
+            //                 log::debug!("Double click");
+            //                 self.click_button = Some(button);
+            //                 self.double_click = true;
+            //                 self.pending_click = None;
+            //                 self.exit = true;
+            //             } else {
+            //                 log::debug!("Click pending (waiting for a possible double click)");
+            //                 self.pending_click = Some((button, event.time));
+            //             }
+            //         } else {
+            //             log::debug!("Final click (multi-selection, immediate)");
+            //             self.click_button = Some(button);
+            //             self.double_click = false;
+            //             self.exit = true;
+            //         }
+            //     }
+            // }
 
-                if let Some(button) = explicit_button {
-                    if self.selection.len() == 1 {
-                        let is_repeat_click = if let Some((pending_button, pending_time)) =
-                            self.pending_click
-                        {
-                            pending_button == button
-                                && event.time.saturating_sub(pending_time) <= DOUBLE_CLICK_WINDOW_MS
-                        } else {
-                            false
-                        };
-
-                        if is_repeat_click {
-                            log::debug!("Double click");
-                            self.click_button = Some(button);
-                            self.double_click = true;
-                            self.pending_click = None;
-                            self.exit = true;
-                        } else {
-                            log::debug!("Click pending (waiting for a possible double click)");
-                            self.pending_click = Some((button, event.time));
-                        }
-                    } else {
-                        log::debug!("Final click (multi-selection, immediate)");
-                        self.click_button = Some(button);
-                        self.double_click = false;
-                        self.exit = true;
-                    }
-                }
-            }
-
-            if self.current_selection_index == 0
-                && !self.selection[self.current_selection_index]
-                    .selected_line
-                    .is_none()
-            {
+            // Retunr allows a second selection on first step only.
+            if self.current_selection_index == 0 && !selection.selected_line.is_none() {
                 if event.keysym == Keysym::Return {
                     log::debug!("New selection");
 
                     self.selection.push(Selection {
                         selected_column: None,
                         selected_line: None,
+                        selected_division: None,
                         zones: Vec::new(),
                         output: self.current_output.clone(),
                     });
@@ -136,57 +211,43 @@ impl KeyboardHandler for MainLayer {
                 }
             }
 
-            if event.keysym == Keysym::BackSpace {
-                log::debug!("Undo");
-                self.pending_click = None;
-                if !self.selection[self.current_selection_index]
-                    .zones
-                    .is_empty()
-                {
-                    self.selection[self.current_selection_index].zones.pop();
-                    need_draw = true;
-                } else if !self.selection[self.current_selection_index]
-                    .selected_line
-                    .is_none()
-                {
-                    self.selection[self.current_selection_index].selected_line = None;
-                    need_draw = true;
-                } else if !self.selection[self.current_selection_index]
-                    .selected_column
-                    .is_none()
-                {
-                    self.selection[self.current_selection_index].selected_column = None;
-                    need_draw = true;
-                }
+            // Backspace allow to cancel the last selection step
+            if self.handle_cancel_and_confirm(&event) {
+                need_draw = true;
             }
 
+            // Are we waiting for a column ?
             if self.selection[self.current_selection_index]
                 .selected_column
                 .is_none()
             {
-                for i in 0..10 {
-                    if event.raw_code == 30 + i {
-                        log::debug!("Column selected: {i}");
-                        self.selection[self.current_selection_index].selected_column = Some(i);
-                        need_draw = true;
-                    }
+                // Column selection
+                if self.handle_column_selection_and_confirm(&event) {
+                    need_draw = true;
                 }
-            } else if self.selection[self.current_selection_index]
+            } else
+            // Are we waiting for a line ?
+            if self.selection[self.current_selection_index]
                 .selected_line
                 .is_none()
             {
-                for (key_line, first_key) in vec![16, 30, 44].iter().enumerate() {
-                    for i in 0..10 {
-                        if event.raw_code == first_key + i {
-                            let choice = key_line as u32 * 10 + i;
-                            log::debug!("Line selected: {choice}");
-                            self.selection[self.current_selection_index].selected_line =
-                                Some(choice);
-                            need_draw = true;
-                        }
-                    }
+                // Line selection
+                if self.handle_line_selection_and_confirm(&event) {
+                    need_draw = true;
                 }
-            } else {
+            } else
+            // Are we waiting for a division ?
+            if self.selection[self.current_selection_index]
+                .selected_division
+                .is_none()
+            {
+                // Division selection
+                if self.handle_division_selection_and_confirm(&event, true) {
+                    need_draw = true;
+                }
+            } else
+            // We are waiting for a more precise zone
+            {
                 if event.raw_code == 23 {
                     let current_zone = if let Some(zone) =
                         self.selection[self.current_selection_index].zones.last()
@@ -255,6 +316,21 @@ impl KeyboardHandler for MainLayer {
             }
         } else {
             // Shift pressed !
+
+
+            let selection = &self.selection[self.current_selection_index];
+            if 
+                selection.selected_column.is_some() &&
+                selection.selected_line.is_some() &&
+                selection.selected_division.is_none()
+            {
+                // Division selection
+                if self.handle_division_selection_and_confirm(&event, false) {
+                    need_draw = true;
+                }
+            }
+
+
             // TODO : Remove hardcoded values
             let direction = if event.raw_code == 35 || event.keysym == Keysym::Left {
                 Some(Direction::Left)
