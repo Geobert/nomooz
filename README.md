@@ -31,21 +31,29 @@ Launching the binary shows a grid over your active display.
 
 Each cell is labeled with its shortcut. To select the cell labeled "f y", press "f" then "y".
 
+#### Pick a division
+
+After selecting a cell, press a third key (same 3-row layout, now shown smaller inside the cell) to pick a division and click there immediately.
+
+Hold `Shift` while pressing that key to pick the division without clicking, so you can refine it further (shrink, move) before producing the click.
+
+If you skip this step and just press a click key right away, it clicks the center of the cell (marked with a small square).
+
 #### Refine the selection
 
 - Arrow keys (or Vim direction keys) move the selection by its own size.
 - The dedicated “shrink” key (converging arrows on the diagram) halves the selection, centered. Repeat to keep narrowing it down to a single pixel.
-- `Backspace` reverts the last step (move, shrink, or cell selection). Can be used repeatedly.
+- The “cancel” key reverts the last step (move, shrink, or cell selection). Can be used repeatedly.
 
 #### Produce a click
 
-- `Space`: left click at the center of the current selection
-- The three bottom-row keys to the right of space (physical position, independent of your keyboard layout): left, middle, right click
+- Pressing a click key (left/middle/right) clicks at the center of the current selection
 - Press the same click key twice quickly for a double click (single selection only)
+- Click keys and other shortcuts are configurable — see [Keybindings](#keybindings)
 
 #### Selection and drag’n drop
 
-After a first selection, press `Enter` to start a second one, then click. This holds the button down and moves the pointer between the two selections.
+After a first selection, press the “next selection” key to start a second one, then click. This holds the button down and moves the pointer between the two selections.
 
 #### Work with multiple displays
 
@@ -74,6 +82,24 @@ appearance {
 - `background-color`: overall screen dimming
 
 Colors are `#rrggbbaa` hex strings.
+
+### Keybindings
+
+```kdl
+binds {
+  left-click space
+  middle-click 8
+  right-click 9
+  next-selection Return
+  cancel-selection BackSpace
+}
+```
+
+Key names are [xkbcommon keysym names](https://xkbcommon.org/doc/current/xkbcommon-keysyms_8h.html) (case-insensitive), e.g. `space`, `Return`, `BackSpace`, or a single character/digit like `8`.
+
+- `left-click` / `middle-click` / `right-click`: produce a click
+- `next-selection`: start a second selection for drag'n drop
+- `cancel-selection`: revert the last selection step
 
 ## Niri configuration recommendation
 

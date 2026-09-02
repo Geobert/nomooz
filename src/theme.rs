@@ -12,7 +12,7 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn from_config(config: Configuration) -> Result<Self, Box<dyn Error>> {
+    pub fn from_config(config: &Configuration) -> Result<Self, Box<dyn Error>> {
         let font = config.get("appearance.font")?;
         let text_color = ColorRGBA::from_hex_string(&config.get("appearance.text-color")?)?;
         let text_background_color = ColorRGBA::from_hex_string(&config.get("appearance.text-background-color")?)?;

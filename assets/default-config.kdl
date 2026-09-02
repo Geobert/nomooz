@@ -6,3 +6,10 @@ appearance {
   grid-lines-color "#000000a0"
   background-color "#000000a0"
 }
+binds {
+  left-click space
+  middle-click 8
+  right-click 9
+  next-selection Return
+  cancel-selection BackSpace
+}

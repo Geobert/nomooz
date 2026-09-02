@@ -63,6 +63,14 @@ impl Configuration {
         Ok(value.to_string())
     }
 
+    pub fn get_or_default(&self, key: &str, default: String) -> String {
+        if let Ok(value) = self.get(key) {
+            value
+        } else {
+            default
+        }
+    }
+
 }
 
 
