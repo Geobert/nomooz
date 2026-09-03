@@ -116,8 +116,16 @@ pub fn execute_click(main_layer: &MainLayer, qh: &QueueHandle<MainLayer>, conn: 
                     (info.logical_position, info.logical_size)
                 {
                     // Use this selection’s own screen size.
-                    let base_zone =
-                        Zone::from_selection(selection, width as u32, height as u32);
+                    let base_zone = match (selection.selected_column, selection.selected_line) {
+                        (Some(_), Some(_)) if selection.selected_division.is_some() => {
+                            Zone::from_selection(selection, width as u32, height as u32)
+                        }
+                        (Some(column), Some(line)) => {
+                            // No division selected : click the middle of the cell.
+                            Zone::from_column_line(column, line, width as u32, height as u32)
+                        }
+                        _ => continue,
+                    };
                     let active_zone = if let Some(zone) = selection.zones.last() {
                         *zone
                     } else {

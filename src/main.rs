@@ -16,6 +16,8 @@ mod xkb_parser;
 mod zone;
 mod configuration;
 mod theme;
+mod bindings;
+mod behavior;
 
 use smithay_client_toolkit::{
     compositor::CompositorState,
@@ -28,7 +30,7 @@ use smithay_client_toolkit::{
 use wayland_client::{Connection, globals::registry_queue_init};
 
 use crate::{
-    cache::load_cache, configuration::Configuration, main_layer::*, text_renderer::TextRenderer, theme::Theme, virtual_pointer::VirtualPointerManager, xkb_parser::XkbParser,
+    behavior::Behavior, bindings::Bindings, cache::load_cache, configuration::Configuration, main_layer::*, text_renderer::TextRenderer, theme::Theme, virtual_pointer::VirtualPointerManager, xkb_parser::XkbParser,
 };
 
 fn main() {
@@ -36,7 +38,9 @@ fn main() {
 
 
     let config = Configuration::load_config().expect("Can’t load configuration");
-    let theme = Theme::from_config(config).expect("Can’t init theme");
+    let theme = Theme::from_config(&config).expect("Can’t init theme");
+    let bindings = Bindings::from_config(&config).expect("Can’t init bindings");
+    let behavior = Behavior::from_config(&config).expect("Can’t init behavior");
 
     let text_renderer = TextRenderer::new(&theme.font);
 
@@ -83,7 +87,9 @@ fn main() {
         layer,
         text_renderer,
         xkb_parser,
-        theme
+        theme,
+        bindings,
+        behavior
     );
 
     event_queue.roundtrip(&mut main_layer).unwrap();

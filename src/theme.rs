@@ -12,13 +12,13 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn from_config(config: Configuration) -> Result<Self, Box<dyn Error>> {
-        let font = config.get("appearance.font")?;
-        let text_color = ColorRGBA::from_hex_string(&config.get("appearance.text-color")?)?;
-        let text_background_color = ColorRGBA::from_hex_string(&config.get("appearance.text-background-color")?)?;
-        let background_color = ColorRGBA::from_hex_string(&config.get("appearance.background-color")?)?;
-        let grid_lines_color = ColorRGBA::from_hex_string(&config.get("appearance.grid-lines-color")?)?;
-        let grid_cells_color = ColorRGBA::from_hex_string(&config.get("appearance.grid-cells-color")?)?;
+    pub fn from_config(config: &Configuration) -> Result<Self, Box<dyn Error>> {
+        let font = config.get_string("appearance.font")?;
+        let text_color = ColorRGBA::from_hex_string(&config.get_string("appearance.text-color")?)?;
+        let text_background_color = ColorRGBA::from_hex_string(&config.get_string("appearance.text-background-color")?)?;
+        let background_color = ColorRGBA::from_hex_string(&config.get_string("appearance.background-color")?)?;
+        let grid_lines_color = ColorRGBA::from_hex_string(&config.get_string("appearance.grid-lines-color")?)?;
+        let grid_cells_color = ColorRGBA::from_hex_string(&config.get_string("appearance.grid-cells-color")?)?;
 
         Ok(Self {
             font,

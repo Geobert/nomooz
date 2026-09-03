@@ -1,6 +1,5 @@
 use crate::{
-    draw_geometry::draw_filled_rectangle, labels::Labels,
-    main_layer::MainLayer, zone::Zone,
+    draw_geometry::draw_filled_rectangle, labels::Labels, main_layer::MainLayer, zone::Zone,
 };
 
 use std::convert::TryInto;
@@ -45,7 +44,6 @@ impl MainLayer {
         let height = self.height;
 
         if self.need_redraw {
-
             // Try to use the same canvas again
             let mut canvas = if self.buffer.is_none() {
                 Self::create_canvas(&mut self.pool, &mut self.buffer, width, height)
@@ -67,7 +65,6 @@ impl MainLayer {
             let sel = &self.selection[self.current_selection_index];
 
             // Quickly darken all background
-            // let dark_background: [u8; 4] = ColorRGBA::new(0, 0, 0, 192).into();
             let dark_background: [u8; 4] = self.theme.background_color.into();
             {
                 canvas.chunks_exact_mut(4).for_each(|chunk| {
@@ -87,12 +84,17 @@ impl MainLayer {
                 cells_count_x,
                 cells_count_y,
                 cell_labels,
-            ) = match (sel.selected_column, sel.selected_line) {
+                font_size,
+            ) = match (
+                sel.selected_column,
+                sel.selected_line,
+                sel.selected_division,
+            ) {
                 // No selection : 10x30 grid
-                (None, _) => (0, 0, width, height, 10, 30, &labels.all),
+                (None, _, _) => (0, 0, width, height, 10, 30, &labels.all, 32f32),
 
                 // A column is selected : trace only one column
-                (Some(column), None) => (
+                (Some(column), None, _) => (
                     column * (width / 10),
                     0,
                     width / 10,
@@ -100,10 +102,26 @@ impl MainLayer {
                     1,
                     30,
                     &labels.column,
+                    32f32,
                 ),
 
+                (Some(column), Some(line), None) => {
+                    let cell_width = self.width / 10;
+                    let cell_height = self.height / 30;
+                    (
+                        column * cell_width,
+                        line * cell_height,
+                        cell_width,
+                        cell_height,
+                        10,
+                        3,
+                        &labels.divisions,
+                        16f32,
+                    )
+                }
+
                 // Only the zone: no grid, no labels.
-                (Some(_column), Some(_line)) => {
+                (Some(_column), Some(_line), Some(_division)) => {
                     let base_zone = Zone::from_selection(sel, width, height);
                     let active_zone = if let Some(zone) = sel.zones.last() {
                         *zone
@@ -119,6 +137,7 @@ impl MainLayer {
                         1,
                         1,
                         &empty,
+                        0.0, // No label here
                     )
                 }
             };
@@ -152,13 +171,38 @@ impl MainLayer {
                 cells_count_x,
                 cells_count_y,
                 cell_labels,
-                32.0,
+                font_size,
                 self.theme.text_color,
                 self.theme.text_background_color,
                 &self.text_renderer,
                 &mut canvas,
                 width as usize,
             );
+
+
+            // Draw the center of a selection
+            let selection = &self.selection[self.current_selection_index];
+            if selection.selected_column.is_some() &&
+                selection.selected_line.is_some() &&
+                    selection.selected_division.is_none() {
+                let column = selection.selected_column.unwrap();
+                let line = selection.selected_line.unwrap();
+                let cell_width = self.width / 10;
+                let cell_height = self.height / 30;
+                let center_x = column * cell_width + cell_width / 2;
+                let center_y = line * cell_height + cell_height / 2;
+
+                draw_filled_rectangle(
+                    center_x - 3,
+                    center_y - 3,
+                    5,
+                    5,
+                    self.theme.text_color,
+                    &mut canvas,
+                    width as usize,
+                );
+            }
+
 
             self.buffer
                 .as_ref()

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use kdl::{KdlDocument, KdlNode};
+use kdl::{KdlDocument, KdlNode, KdlValue};
 
 pub struct Configuration {
     data: KdlDocument
@@ -41,7 +41,8 @@ impl Configuration {
         })
     }
 
-    pub fn get(&self, key: &str) -> Result<String, Box<dyn std::error::Error>> {
+
+    fn get_raw(&self, key: &str) -> Result<&KdlValue, Box<dyn std::error::Error>> {
         let keys: Vec<&str> = key.split('.').collect();
         
         let mut doc = &self.data;
@@ -57,10 +58,40 @@ impl Configuration {
 
         let value = 
             node.ok_or("Unexpected node error")?
-            .get(0).ok_or("Not value attached")?
+            .get(0).ok_or("Not value attached")?;
+
+        Ok(value)
+    }
+
+    pub fn get_string(&self, key: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let value = self.get_raw(key)?
             .as_string().ok_or("Not a string")?;
 
         Ok(value.to_string())
+    }
+
+    pub fn get_string_or_default(&self, key: &str, default: String) -> String {
+        if let Ok(value) = self.get_string(key) {
+            value
+        } else {
+            default
+        }
+    }
+
+
+    pub fn get_bool(&self, key: &str) -> Result<bool, Box<dyn std::error::Error>> {
+        let value = self.get_raw(key)?
+            .as_bool().ok_or("Not a boolean")?;
+
+        Ok(value)
+    }
+
+    pub fn get_bool_or_default(&self, key: &str, default: bool) -> bool {
+        if let Ok(value) = self.get_bool(key) {
+            value
+        } else {
+            default
+        }
     }
 
 }
