@@ -116,9 +116,7 @@ impl TextRenderer {
             });
 
         // Horizontal offset for string centering
-        let mut position_x = x - width / 2.0;
-
-        position_x = x - width / 2.0;
+        let position_x = x - width / 2.0;
 
         // Stroke size = 10% of the font size
         let stroke_width = (size * 0.1).round().max(1.0) as i32;
