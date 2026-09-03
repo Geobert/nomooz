@@ -136,8 +136,8 @@ impl MainLayer {
         let mut total_width = 0;
         let mut total_height = 0;
         for (_, info) in self.outputs() {
-            if let Some((x, y)) = info.logical_position {
-                if let Some((width, height)) = info.logical_size {
+            if let Some((x, y)) = info.logical_position
+                && let Some((width, height)) = info.logical_size {
                     if x + width > total_width {
                         total_width = x + width;
                     }
@@ -145,7 +145,6 @@ impl MainLayer {
                         total_height = y + height;
                     }
                 }
-            }
         }
         (total_width, total_height)
     }
@@ -181,9 +180,9 @@ impl MainLayer {
         self.need_redraw = true;
 
         // Move the pointer to the center of the new screen.
-        if let Some(info) = self.output_info(output) {
-            if let Some((width, height)) = info.logical_size {
-                if let Some((pos_x, pos_y)) = info.logical_position {
+        if let Some(info) = self.output_info(output)
+            && let Some((width, height)) = info.logical_size
+                && let Some((pos_x, pos_y)) = info.logical_position {
                     let (total_width, total_height) = self.total_layout_size();
                     let global_x = pos_x + width / 2;
                     let global_y = pos_y + height / 2;
@@ -195,8 +194,6 @@ impl MainLayer {
                         total_height as u32,
                     );
                 }
-            }
-        }
     }
 }
 
@@ -229,14 +226,13 @@ impl CompositorHandler for MainLayer {
         time: u32,
     ) {
         // If no second click comes fast enough, click once.
-        if let Some((button, pending_time)) = self.pending_click {
-            if time.saturating_sub(pending_time) > DOUBLE_CLICK_WINDOW_MS {
+        if let Some((button, pending_time)) = self.pending_click
+            && time.saturating_sub(pending_time) > DOUBLE_CLICK_WINDOW_MS {
                 self.click_button = Some(button);
                 self.double_click = false;
                 self.pending_click = None;
                 self.exit = true;
             }
-        }
 
         // Don’t draw before the first configure, or it crashes.
         if !self.first_configure {

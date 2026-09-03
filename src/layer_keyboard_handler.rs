@@ -221,8 +221,8 @@ impl KeyboardHandler for MainLayer {
                 }
 
                 // Second selection enabled on first step only.
-                if self.current_selection_index == 0 && !selection.selected_line.is_none() {
-                    if event.keysym == keysym_to_lower(&self.bindings.next_selection) {
+                if self.current_selection_index == 0 && !selection.selected_line.is_none()
+                    && event.keysym == keysym_to_lower(&self.bindings.next_selection) {
                         log::debug!("New selection");
 
                         self.selection.push(Selection {
@@ -235,7 +235,6 @@ impl KeyboardHandler for MainLayer {
                         self.current_selection_index += 1;
                         need_draw = true;
                     }
-                }
 
                 // Backspace allow to cancel the last selection step
                 if self.handle_cancel_and_confirm(&event) {

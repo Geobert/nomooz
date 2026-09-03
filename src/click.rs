@@ -110,9 +110,9 @@ pub fn execute_click(main_layer: &MainLayer, qh: &QueueHandle<MainLayer>, conn: 
         .collect();
 
     for (index, selection) in main_layer.selection.iter().enumerate() {
-        if let Some(output) = selection.output.clone() {
-            if let Some(info) = main_layer.output_info(&output) {
-                if let (Some((pos_x, pos_y)), Some((width, height))) =
+        if let Some(output) = selection.output.clone()
+            && let Some(info) = main_layer.output_info(&output)
+                && let (Some((pos_x, pos_y)), Some((width, height))) =
                     (info.logical_position, info.logical_size)
                 {
                     // Use this selection’s own screen size.
@@ -153,16 +153,13 @@ pub fn execute_click(main_layer: &MainLayer, qh: &QueueHandle<MainLayer>, conn: 
                     );
                     previous_position = (global_x, global_y);
 
-                    if index == 0 {
-                        if let Some(button) = main_layer.click_button {
+                    if index == 0
+                        && let Some(button) = main_layer.click_button {
                             log::debug!("Button held down");
                             pointer.press(button);
                             let _ = conn.flush();
                         }
-                    }
                 }
-            }
-        }
     }
 
     let Some(button) = main_layer.click_button else {

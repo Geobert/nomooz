@@ -45,7 +45,7 @@ impl MainLayer {
 
         if self.need_redraw {
             // Try to use the same canvas again
-            let mut canvas = if self.buffer.is_none() {
+            let canvas = if self.buffer.is_none() {
                 Self::create_canvas(&mut self.pool, &mut self.buffer, width, height)
             } else {
                 let c = self.pool.canvas(self.buffer.as_ref().unwrap());

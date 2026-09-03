@@ -19,7 +19,7 @@ pub fn draw_grid(
                 color.print_on_canvas(
                     x as usize + i * fact + k - 1,
                     j,
-                    &mut canvas,
+                    canvas,
                     canvas_width,
                 );
             }
@@ -33,7 +33,7 @@ pub fn draw_grid(
                 color.print_on_canvas(
                     j,
                     y as usize + i * fact + k - 1,
-                    &mut canvas,
+                    canvas,
                     canvas_width,
                 );
             }
@@ -48,7 +48,7 @@ pub fn draw_grid_labels(
     height: u32, // zone
     cells_count_x: u32,
     cells_count_y: u32,
-    labels: &Vec<Vec<String>>, // labels[row][col]
+    labels: &Vec<Vec<String>>,
     size: f32,
     color: ColorRGBA,
     circle_color: ColorRGBA,
