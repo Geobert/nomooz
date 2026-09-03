@@ -67,6 +67,7 @@ impl MainLayer {
             // Quickly darken all background
             let dark_background: [u8; 4] = self.theme.background_color.into();
             {
+                // canvas.chunks_exact_mut(4).for_each(|chunk| {
                 canvas.chunks_exact_mut(4).for_each(|chunk| {
                     let array: &mut [u8; 4] = chunk.try_into().unwrap();
                     *array = dark_background;
@@ -147,7 +148,7 @@ impl MainLayer {
                 zone_width,
                 zone_height,
                 self.theme.grid_cells_color,
-                &mut canvas,
+                canvas,
                 width as usize,
             );
 
@@ -159,7 +160,7 @@ impl MainLayer {
                 cells_count_x,
                 cells_count_y,
                 self.theme.grid_lines_color,
-                &mut canvas,
+                canvas,
                 width as usize,
             );
 
@@ -175,18 +176,16 @@ impl MainLayer {
                 self.theme.text_color,
                 self.theme.text_background_color,
                 &self.text_renderer,
-                &mut canvas,
+                canvas,
                 width as usize,
             );
 
 
             // Draw the center of a selection
             let selection = &self.selection[self.current_selection_index];
-            if selection.selected_column.is_some() &&
-                selection.selected_line.is_some() &&
+            if let Some(column) = selection.selected_column &&
+                let Some(line) = selection.selected_line &&
                     selection.selected_division.is_none() {
-                let column = selection.selected_column.unwrap();
-                let line = selection.selected_line.unwrap();
                 let cell_width = self.width / 10;
                 let cell_height = self.height / 30;
                 let center_x = column * cell_width + cell_width / 2;
@@ -198,7 +197,7 @@ impl MainLayer {
                     5,
                     5,
                     self.theme.text_color,
-                    &mut canvas,
+                    canvas,
                     width as usize,
                 );
             }

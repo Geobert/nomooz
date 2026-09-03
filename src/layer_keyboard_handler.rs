@@ -20,7 +20,7 @@ use crate::{
 
 impl MainLayer {
     fn handle_division_selection_and_confirm(&mut self, event: &KeyEvent, click: bool) -> bool {
-        for (key_line, first_key) in vec![16, 30, 44].iter().enumerate() {
+        for (key_line, first_key) in [16, 30, 44].iter().enumerate() {
             for i in 0..10 {
                 if event.raw_code == first_key + i {
                     let choice = key_line as u32 * 10 + i;

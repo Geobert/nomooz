@@ -146,7 +146,7 @@ impl TextRenderer {
         canvas_width: usize,
     ) {
         for glyph in glyphes.iter() {
-            let mut working_color = color.clone();
+            let mut working_color = color; // .clone();
 
             if let Some(outlined) = &glyph.outlined {
                 let pen_x = position_x.round();
