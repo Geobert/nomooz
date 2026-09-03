@@ -8,6 +8,13 @@ struct GlyphData {
     width: f32,
 }
 
+#[derive(Clone, Copy)]
+pub struct TextStyle {
+    pub size: f32,
+    pub color: ColorRGBA,
+    pub stroke_color: ColorRGBA,
+}
+
 pub struct TextRenderer {
     font: FontArc,
 }
@@ -67,13 +74,11 @@ impl TextRenderer {
         text: &str,
         x: f32,
         y: f32,
-        size: f32,
-        color: ColorRGBA,
-        stroke_color: ColorRGBA,
+        style: TextStyle,
         canvas: &mut [u8],
         canvas_width: usize,
     ) {
-        let scaled = self.font.as_scaled(PxScale::from(size));
+        let scaled = self.font.as_scaled(PxScale::from(style.size));
 
         // Store all glyph data
         let mut glyphes: Vec<GlyphData> = Vec::new();
@@ -119,7 +124,7 @@ impl TextRenderer {
         let position_x = x - width / 2.0;
 
         // Stroke size = 10% of the font size
-        let stroke_width = (size * 0.1).round().max(1.0) as i32;
+        let stroke_width = (style.size * 0.1).round().max(1.0) as i32;
 
         // Really render the string
         for i in -stroke_width..=stroke_width {
@@ -128,13 +133,13 @@ impl TextRenderer {
                     &glyphes,
                     position_x + i as f32,
                     y + j as f32,
-                    stroke_color,
+                    style.stroke_color,
                     canvas,
                     canvas_width,
                 );
             }
         }
-        Self::print_glyph(&glyphes, position_x, y, color, canvas, canvas_width);
+        Self::print_glyph(&glyphes, position_x, y, style.color, canvas, canvas_width);
     }
 
     fn print_glyph(
@@ -168,5 +173,4 @@ impl TextRenderer {
             position_x += glyph.advance;
         }
     }
-
 }

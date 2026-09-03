@@ -1,8 +1,7 @@
 use crate::{
-    draw_geometry::draw_filled_rectangle, labels::Labels, main_layer::MainLayer, zone::Zone,
+    draw_geometry::draw_filled_rectangle, geometry::{Coordinate, Size}, labels::Labels,
+    main_layer::MainLayer, text_renderer::TextStyle, zone::Zone,
 };
-
-use std::convert::TryInto;
 
 use smithay_client_toolkit::{
     compositor::FrameCallbackData,
@@ -67,9 +66,7 @@ impl MainLayer {
             // Quickly darken all background
             let dark_background: [u8; 4] = self.theme.background_color.into();
             {
-                // canvas.chunks_exact_mut(4).for_each(|chunk| {
-                canvas.chunks_exact_mut(4).for_each(|chunk| {
-                    let array: &mut [u8; 4] = chunk.try_into().unwrap();
+                canvas.as_chunks_mut::<4>().0.iter_mut().for_each(|array| {
                     *array = dark_background;
                 });
             }
@@ -77,29 +74,35 @@ impl MainLayer {
             let empty: Vec<Vec<String>> = vec![vec![String::new()]];
 
             // Draw the grid: full screen, one column, or the zone.
-            let (
-                zone_x,
-                zone_y,
-                zone_width,
-                zone_height,
-                cells_count_x,
-                cells_count_y,
-                cell_labels,
-                font_size,
-            ) = match (
+            let (zone, cells_count_x, cells_count_y, cell_labels, font_size) = match (
                 sel.selected_column,
                 sel.selected_line,
                 sel.selected_division,
             ) {
                 // No selection : 10x30 grid
-                (None, _, _) => (0, 0, width, height, 10, 30, &labels.all, 32f32),
+                (None, _, _) => (
+                    Zone {
+                        position: Coordinate { x: 0, y: 0 },
+                        size: Size { width, height },
+                    },
+                    10,
+                    30,
+                    &labels.all,
+                    32f32,
+                ),
 
                 // A column is selected : trace only one column
                 (Some(column), None, _) => (
-                    column * (width / 10),
-                    0,
-                    width / 10,
-                    height,
+                    Zone {
+                        position: Coordinate {
+                            x: column * (width / 10),
+                            y: 0,
+                        },
+                        size: Size {
+                            width: width / 10,
+                            height,
+                        },
+                    },
                     1,
                     30,
                     &labels.column,
@@ -110,10 +113,16 @@ impl MainLayer {
                     let cell_width = self.width / 10;
                     let cell_height = self.height / 30;
                     (
-                        column * cell_width,
-                        line * cell_height,
-                        cell_width,
-                        cell_height,
+                        Zone {
+                            position: Coordinate {
+                                x: column * cell_width,
+                                y: line * cell_height,
+                            },
+                            size: Size {
+                                width: cell_width,
+                                height: cell_height,
+                            },
+                        },
                         10,
                         3,
                         &labels.divisions,
@@ -130,33 +139,18 @@ impl MainLayer {
                         base_zone
                     };
 
-                    (
-                        active_zone.position.x,
-                        active_zone.position.y,
-                        active_zone.size.width,
-                        active_zone.size.height,
-                        1,
-                        1,
-                        &empty,
-                        0.0, // No label here
-                    )
+                    (active_zone, 1, 1, &empty, 0.0) // No label here
                 }
             };
             draw_filled_rectangle(
-                zone_x,
-                zone_y,
-                zone_width,
-                zone_height,
+                zone,
                 self.theme.grid_cells_color,
                 canvas,
                 width as usize,
             );
 
             draw_grid(
-                zone_x,
-                zone_y,
-                zone_width,
-                zone_height,
+                zone,
                 cells_count_x,
                 cells_count_y,
                 self.theme.grid_lines_color,
@@ -165,16 +159,13 @@ impl MainLayer {
             );
 
             draw_grid_labels(
-                zone_x,
-                zone_y,
-                zone_width,
-                zone_height,
-                cells_count_x,
-                cells_count_y,
+                zone,
                 cell_labels,
-                font_size,
-                self.theme.text_color,
-                self.theme.text_background_color,
+                TextStyle {
+                    size: font_size,
+                    color: self.theme.text_color,
+                    stroke_color: self.theme.text_background_color,
+                },
                 &self.text_renderer,
                 canvas,
                 width as usize,
@@ -192,10 +183,13 @@ impl MainLayer {
                 let center_y = line * cell_height + cell_height / 2;
 
                 draw_filled_rectangle(
-                    center_x - 3,
-                    center_y - 3,
-                    5,
-                    5,
+                    Zone {
+                        position: Coordinate {
+                            x: center_x - 3,
+                            y: center_y - 3,
+                        },
+                        size: Size { width: 5, height: 5 },
+                    },
                     self.theme.text_color,
                     canvas,
                     width as usize,

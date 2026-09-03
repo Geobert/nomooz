@@ -19,7 +19,7 @@ use wayland_client::{
 };
 
 use crate::{
-    behavior::Behavior, bindings::Bindings, labels::Labels, selection::Selection, text_renderer::TextRenderer, theme::Theme, virtual_pointer::{ClickButton, VirtualPointer, VirtualPointerManager}, xkb_parser::XkbParser,
+    behavior::Behavior, bindings::Bindings, dependencies::Dependencies, labels::Labels, selection::Selection, text_renderer::TextRenderer, theme::Theme, virtual_pointer::{ClickButton, VirtualPointer, VirtualPointerManager}, wayland_resources::WaylandResources, xkb_parser::XkbParser,
 };
 
 /// Max delay between two clicks for a double click.
@@ -62,18 +62,26 @@ impl MainLayer {
     pub fn new(
         globals: &GlobalList,
         qh: &QueueHandle<Self>,
-        compositor: CompositorState,
-        layer_shell: LayerShell,
-        shm: Shm,
-        virtual_pointer_manager: VirtualPointerManager,
-        pool: SlotPool,
-        layer: LayerSurface,
-        text_renderer: TextRenderer,
-        xkb_parser: XkbParser,
-        theme: Theme,
-        bindings: Bindings,
-        behavior: Behavior
+        wayland_resources: WaylandResources,
+        dependencies: Dependencies,
     ) -> Self {
+        let WaylandResources {
+            compositor,
+            layer_shell,
+            shm,
+            virtual_pointer_manager,
+            pool,
+            layer,
+        } = wayland_resources;
+
+        let Dependencies {
+            text_renderer,
+            xkb_parser,
+            theme,
+            bindings,
+            behavior,
+        } = dependencies;
+
         MainLayer {
             registry_state: RegistryState::new(globals),
             seat_state: SeatState::new(globals, qh),

@@ -18,6 +18,8 @@ mod configuration;
 mod theme;
 mod bindings;
 mod behavior;
+mod dependencies;
+mod wayland_resources;
 
 use smithay_client_toolkit::{
     compositor::CompositorState,
@@ -30,7 +32,7 @@ use smithay_client_toolkit::{
 use wayland_client::{Connection, globals::registry_queue_init};
 
 use crate::{
-    behavior::Behavior, bindings::Bindings, cache::load_cache, configuration::Configuration, main_layer::*, text_renderer::TextRenderer, theme::Theme, virtual_pointer::VirtualPointerManager, xkb_parser::XkbParser,
+    behavior::Behavior, bindings::Bindings, cache::load_cache, configuration::Configuration, dependencies::Dependencies, main_layer::*, text_renderer::TextRenderer, theme::Theme, virtual_pointer::VirtualPointerManager, wayland_resources::WaylandResources, xkb_parser::XkbParser,
 };
 
 fn main() {
@@ -79,17 +81,21 @@ fn main() {
     let mut main_layer = MainLayer::new(
         &globals,
         &qh,
-        compositor,
-        layer_shell,
-        shm,
-        virtual_pointer_manager,
-        pool,
-        layer,
-        text_renderer,
-        xkb_parser,
-        theme,
-        bindings,
-        behavior
+        WaylandResources {
+            compositor,
+            layer_shell,
+            shm,
+            virtual_pointer_manager,
+            pool,
+            layer,
+        },
+        Dependencies {
+            text_renderer,
+            xkb_parser,
+            theme,
+            bindings,
+            behavior,
+        },
     );
 
     event_queue.roundtrip(&mut main_layer).unwrap();
