@@ -9,7 +9,7 @@ pub fn draw_grid(
     cells_count_x: u32,
     cells_count_y: u32,
     color: ColorRGBA,
-    mut canvas: &mut [u8],
+    canvas: &mut [u8],
     canvas_width: usize,
 ) {
     let fact = (width / cells_count_x) as usize;
