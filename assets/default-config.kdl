@@ -10,6 +10,14 @@ binds {
   left-click space
   middle-click 8
   right-click 9
+  left h
+  down j
+  up k
+  right l
+  shrink i
   next-selection Return
   cancel-selection BackSpace
+}
+behavior {
+  auto-click #true
 }

@@ -6,6 +6,7 @@ use wayland_client::{
     Connection, QueueHandle,
     protocol::{wl_keyboard, wl_surface},
 };
+use xkbcommon_rs::keysym::keysym_to_lower;
 
 use crate::{
     cache::cache_data,
@@ -64,27 +65,60 @@ impl MainLayer {
         false
     }
 
+    fn handle_change_display(&mut self, qh: &QueueHandle<Self>, event: &KeyEvent) {
+        let direction = if event.keysym == keysym_to_lower(&self.bindings.left)
+            || event.keysym == Keysym::Left
+        {
+            Some(Direction::Left)
+        } else if event.keysym == keysym_to_lower(&self.bindings.right)
+            || event.keysym == Keysym::Right
+        {
+            Some(Direction::Right)
+        } else if event.keysym == keysym_to_lower(&self.bindings.down)
+            || event.keysym == Keysym::Down
+        {
+            Some(Direction::Down)
+        } else if event.keysym == keysym_to_lower(&self.bindings.up) || event.keysym == Keysym::Up {
+            Some(Direction::Up)
+        } else {
+            None
+        };
+
+        log::debug!("Direction requested: {direction:?}");
+        if let Some(direction) = direction {
+            if let Some(current_output) = self.current_output.clone() {
+                if let Some(current_info) = self.output_info(&current_output) {
+                    log::debug!("Current output: {current_info:?}");
+                    let outputs = self.outputs();
+                    log::debug!("Known outputs: {outputs:?}");
+                    if let Some(output) =
+                        find_output_in_direction(&current_info, &outputs, direction)
+                    {
+                        log::debug!("Target output found: {output:?}");
+                        self.switch_output(qh, &output);
+                    } else {
+                        log::warn!("No target output found in this direction");
+                    }
+                }
+            } else {
+                log::warn!("current_output is None: surface_enter not received yet");
+            }
+        }
+    }
+
     fn handle_cancel_and_confirm(&mut self, event: &KeyEvent) -> bool {
+        let cancel_selection = keysym_to_lower(&self.bindings.cancel_selection);
         let selection = &mut self.selection[self.current_selection_index];
-        if event.keysym == Keysym::BackSpace {
+        if event.keysym == cancel_selection {
             log::debug!("Undo");
             self.pending_click = None;
-            if !selection
-                .zones
-                .is_empty()
-            {
+            if !selection.zones.is_empty() {
                 selection.zones.pop();
                 return true;
-            } else if !selection
-                .selected_line
-                .is_none()
-            {
+            } else if !selection.selected_line.is_none() {
                 selection.selected_line = None;
                 return true;
-            } else if !selection
-                .selected_column
-                .is_none()
-            {
+            } else if !selection.selected_column.is_none() {
                 selection.selected_column = None;
                 return true;
             }
@@ -135,236 +169,206 @@ impl KeyboardHandler for MainLayer {
         log::trace!("Key press: {event:?} {}", event.raw_code);
         // println!("Key press: {event:?} {}", event.raw_code);
 
-        if !self.modifiers.shift {
-            // press 'esc' to exit
-            if event.keysym == Keysym::Escape {
-                self.exit = true;
-            }
+        if !self.modifiers.ctrl {
+            if !self.modifiers.shift {
+                // press 'esc' to exit
+                if event.keysym == Keysym::Escape {
+                    self.exit = true;
+                }
 
-            // if event.keysym == Keysym::space {
-            if event.keysym == self.bindings.left_click {
-                log::debug!("Final left click");
-                self.click_button = Some(ClickButton::Left);
-                self.double_click = false;
-                self.exit = true;
-            }
-
-            // Temporary disabled
-            let selection = &self.selection[self.current_selection_index];
-            if selection.selected_column.is_some()
-                && selection.selected_line.is_some()
-            {
-                // 50/51/52 = left/middle/right click, double click included.
-                let explicit_button = if event.keysym == self.bindings.left_click {
-                    Some(ClickButton::Left)
-                } else if event.keysym == self.bindings.middle_click {
-                    Some(ClickButton::Middle)
-                } else if event.keysym == self.bindings.right_click {
-                    Some(ClickButton::Right)
-                } else {
-                    None
-                };
-
-                if let Some(button) = explicit_button {
-                    if self.selection.len() == 1 {
-                        let is_repeat_click = if let Some((pending_button, pending_time)) =
-                            self.pending_click
-                        {
-                            pending_button == button
-                                && event.time.saturating_sub(pending_time) <= DOUBLE_CLICK_WINDOW_MS
-                        } else {
-                            false
-                        };
-
-                        if is_repeat_click {
-                            log::debug!("Double click");
-                            self.click_button = Some(button);
-                            self.double_click = true;
-                            self.pending_click = None;
-                            self.exit = true;
-                        } else {
-                            log::debug!("Click pending (waiting for a possible double click)");
-                            self.pending_click = Some((button, event.time));
-                        }
+                // Manage clicks and double-clicks
+                let selection = &self.selection[self.current_selection_index];
+                if selection.selected_column.is_some() && selection.selected_line.is_some() {
+                    // 50/51/52 = left/middle/right click, double click included.
+                    let explicit_button = if event.keysym == keysym_to_lower(&self.bindings.left_click) {
+                        Some(ClickButton::Left)
+                    } else if event.keysym == keysym_to_lower(&self.bindings.middle_click) {
+                        Some(ClickButton::Middle)
+                    } else if event.keysym == keysym_to_lower(&self.bindings.right_click) {
+                        Some(ClickButton::Right)
                     } else {
-                        log::debug!("Final click (multi-selection, immediate)");
-                        self.click_button = Some(button);
-                        self.double_click = false;
-                        self.exit = true;
-                    }
-                }
-            }
-
-            // Second selection enabled on first step only.
-            if self.current_selection_index == 0 && !selection.selected_line.is_none() {
-                if event.keysym == self.bindings.next_selection {
-                    log::debug!("New selection");
-
-                    self.selection.push(Selection {
-                        selected_column: None,
-                        selected_line: None,
-                        selected_division: None,
-                        zones: Vec::new(),
-                        output: self.current_output.clone(),
-                    });
-                    self.current_selection_index += 1;
-                    need_draw = true;
-                }
-            }
-
-            // Backspace allow to cancel the last selection step
-            if self.handle_cancel_and_confirm(&event) {
-                need_draw = true;
-            }
-
-            // Are we waiting for a column ?
-            if self.selection[self.current_selection_index]
-                .selected_column
-                .is_none()
-            {
-                // Column selection
-                if self.handle_column_selection_and_confirm(&event) {
-                    need_draw = true;
-                }
-            } else
-            // Are we waiting for a line ?
-            if self.selection[self.current_selection_index]
-                .selected_line
-                .is_none()
-            {
-                // Line selection
-                if self.handle_line_selection_and_confirm(&event) {
-                    need_draw = true;
-                }
-            } else
-            // Are we waiting for a division ?
-            if self.selection[self.current_selection_index]
-                .selected_division
-                .is_none()
-            {
-                // Division selection
-                if self.handle_division_selection_and_confirm(&event, true) {
-                    need_draw = true;
-                }
-            } else
-            // We are waiting for a more precise zone
-            {
-                if event.raw_code == 23 {
-                    let current_zone = if let Some(zone) =
-                        self.selection[self.current_selection_index].zones.last()
-                    {
-                        *zone
-                    } else {
-                        Zone::from_selection(
-                            &self.selection[self.current_selection_index],
-                            self.width,
-                            self.height,
-                        )
+                        None
                     };
 
-                    if let Some(new_zone) = current_zone.halved() {
-                        self.selection[self.current_selection_index]
-                            .zones
-                            .push(new_zone);
+                    if let Some(button) = explicit_button {
+                        if self.selection.len() == 1 {
+                            let is_repeat_click =
+                                if let Some((pending_button, pending_time)) = self.pending_click {
+                                    pending_button == button
+                                        && event.time.saturating_sub(pending_time)
+                                            <= DOUBLE_CLICK_WINDOW_MS
+                                } else {
+                                    false
+                                };
 
+                            if is_repeat_click {
+                                log::debug!("Double click");
+                                self.click_button = Some(button);
+                                self.double_click = true;
+                                self.pending_click = None;
+                                self.exit = true;
+                            } else {
+                                log::debug!("Click pending (waiting for a possible double click)");
+                                self.pending_click = Some((button, event.time));
+                            }
+                        } else {
+                            log::debug!("Final click (multi-selection, immediate)");
+                            self.click_button = Some(button);
+                            self.double_click = false;
+                            self.exit = true;
+                        }
+                    }
+                }
+
+                // Second selection enabled on first step only.
+                if self.current_selection_index == 0 && !selection.selected_line.is_none() {
+                    if event.keysym == keysym_to_lower(&self.bindings.next_selection) {
+                        log::debug!("New selection");
+
+                        self.selection.push(Selection {
+                            selected_column: None,
+                            selected_line: None,
+                            selected_division: None,
+                            zones: Vec::new(),
+                            output: self.current_output.clone(),
+                        });
+                        self.current_selection_index += 1;
                         need_draw = true;
                     }
                 }
 
-                // Try to move the current zone (and create it if it doen’t exist
-                let direction = if event.raw_code == 35 || event.keysym == Keysym::Left {
-                    Some(Direction::Left)
-                } else if event.raw_code == 38 || event.keysym == Keysym::Right {
-                    Some(Direction::Right)
-                } else if event.raw_code == 36 || event.keysym == Keysym::Down {
-                    Some(Direction::Down)
-                } else if event.raw_code == 37 || event.keysym == Keysym::Up {
-                    Some(Direction::Up)
-                } else {
-                    None
-                };
+                // Backspace allow to cancel the last selection step
+                if self.handle_cancel_and_confirm(&event) {
+                    need_draw = true;
+                }
 
-                if let Some(direction) = direction {
-                    let current_zone = if let Some(zone) =
-                        self.selection[self.current_selection_index].zones.last()
+                // Are we waiting for a column ?
+                if self.selection[self.current_selection_index]
+                    .selected_column
+                    .is_none()
+                {
+                    // Column selection
+                    if self.handle_column_selection_and_confirm(&event) {
+                        need_draw = true;
+                    }
+                } else
+                // Are we waiting for a line ?
+                if self.selection[self.current_selection_index]
+                    .selected_line
+                    .is_none()
+                {
+                    // Line selection
+                    if self.handle_line_selection_and_confirm(&event) {
+                        need_draw = true;
+                    }
+                } else
+                // Are we waiting for a division ?
+                if self.selection[self.current_selection_index]
+                    .selected_division
+                    .is_none()
+                {
+                    // Division selection
+                    if self.handle_division_selection_and_confirm(&event, self.behavior.auto_click)
                     {
-                        *zone
+                        need_draw = true;
+                    }
+                } else
+                // We are waiting for a more precise zone
+                {
+                    if event.keysym == keysym_to_lower(&self.bindings.shrink) {
+                        let current_zone = if let Some(zone) =
+                            self.selection[self.current_selection_index].zones.last()
+                        {
+                            *zone
+                        } else {
+                            Zone::from_selection(
+                                &self.selection[self.current_selection_index],
+                                self.width,
+                                self.height,
+                            )
+                        };
+
+                        if let Some(new_zone) = current_zone.halved() {
+                            self.selection[self.current_selection_index]
+                                .zones
+                                .push(new_zone);
+
+                            need_draw = true;
+                        }
+                    }
+
+                    // Try to move the current zone (and create it if it doen’t exist
+                    let direction = if event.keysym == keysym_to_lower(&self.bindings.left)
+                        || event.keysym == Keysym::Left
+                    {
+                        Some(Direction::Left)
+                    } else if event.keysym == keysym_to_lower(&self.bindings.right)
+                        || event.keysym == Keysym::Right
+                    {
+                        Some(Direction::Right)
+                    } else if event.keysym == keysym_to_lower(&self.bindings.down)
+                        || event.keysym == Keysym::Down
+                    {
+                        Some(Direction::Down)
+                    } else if event.keysym == keysym_to_lower(&self.bindings.up)
+                        || event.keysym == Keysym::Up
+                    {
+                        Some(Direction::Up)
                     } else {
-                        Zone::from_selection(
-                            &self.selection[self.current_selection_index],
-                            self.width,
-                            self.height,
-                        )
+                        None
                     };
 
-                    if let Some(new_zone) = current_zone.moved(direction, self.width, self.height) {
-                        self.selection[self.current_selection_index]
-                            .zones
-                            .push(new_zone);
-                    } else {
-                        if self.selection[self.current_selection_index]
-                            .zones
-                            .is_empty()
+                    if let Some(direction) = direction {
+                        let current_zone = if let Some(zone) =
+                            self.selection[self.current_selection_index].zones.last()
+                        {
+                            *zone
+                        } else {
+                            Zone::from_selection(
+                                &self.selection[self.current_selection_index],
+                                self.width,
+                                self.height,
+                            )
+                        };
+
+                        if let Some(new_zone) =
+                            current_zone.moved(direction, self.width, self.height)
                         {
                             self.selection[self.current_selection_index]
                                 .zones
-                                .push(current_zone);
+                                .push(new_zone);
+                        } else {
+                            if self.selection[self.current_selection_index]
+                                .zones
+                                .is_empty()
+                            {
+                                self.selection[self.current_selection_index]
+                                    .zones
+                                    .push(current_zone);
+                            }
                         }
-                    }
 
-                    need_draw = true;
+                        need_draw = true;
+                    }
+                }
+            } else {
+                // Shift pressed !
+
+                let selection = &self.selection[self.current_selection_index];
+                if selection.selected_column.is_some()
+                    && selection.selected_line.is_some()
+                    && selection.selected_division.is_none()
+                {
+                    // Division selection
+                    if self.handle_division_selection_and_confirm(&event, !self.behavior.auto_click)
+                    {
+                        need_draw = true;
+                    }
                 }
             }
         } else {
-            // Shift pressed !
-
-
-            let selection = &self.selection[self.current_selection_index];
-            if 
-                selection.selected_column.is_some() &&
-                selection.selected_line.is_some() &&
-                selection.selected_division.is_none()
-            {
-                // Division selection
-                if self.handle_division_selection_and_confirm(&event, false) {
-                    need_draw = true;
-                }
-            }
-
-
-            // TODO : Remove hardcoded values
-            let direction = if event.raw_code == 35 || event.keysym == Keysym::Left {
-                Some(Direction::Left)
-            } else if event.raw_code == 38 || event.keysym == Keysym::Right {
-                Some(Direction::Right)
-            } else if event.raw_code == 36 || event.keysym == Keysym::Down {
-                Some(Direction::Down)
-            } else if event.raw_code == 37 || event.keysym == Keysym::Up {
-                Some(Direction::Up)
-            } else {
-                None
-            };
-
-            log::debug!("Direction requested: {direction:?}");
-            if let Some(direction) = direction {
-                if let Some(current_output) = self.current_output.clone() {
-                    if let Some(current_info) = self.output_info(&current_output) {
-                        log::debug!("Current output: {current_info:?}");
-                        let outputs = self.outputs();
-                        log::debug!("Known outputs: {outputs:?}");
-                        if let Some(output) =
-                            find_output_in_direction(&current_info, &outputs, direction)
-                        {
-                            log::debug!("Target output found: {output:?}");
-                            self.switch_output(qh, &output);
-                        } else {
-                            log::warn!("No target output found in this direction");
-                        }
-                    }
-                } else {
-                    log::warn!("current_output is None: surface_enter not received yet");
-                }
-            }
+            // Ctrl modifier is pressed
+            self.handle_change_display(qh, &event);
         }
 
         if need_draw {

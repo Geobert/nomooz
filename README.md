@@ -12,6 +12,15 @@ cargo build --release
 
 The binary will be at `target/release/nomooz`.
 
+### Using Nix
+
+Thanks to [Geobert](https://github.com/geobert) for contributing `flake.nix` and `rust-toolchain.toml`. If you have Nix with flakes enabled, you don't need to install a Rust toolchain yourself:
+
+```sh
+nix develop
+cargo build --release
+```
+
 ## How to use it
 
 ### Compositor configuration
@@ -33,29 +42,29 @@ Each cell is labeled with its shortcut. To select the cell labeled "f y", press 
 
 After selecting a cell, press a third key (same 3-row layout, now shown smaller inside the cell) to pick a division and click there immediately.
 
-Hold `Shift` while pressing that key to pick the division without clicking, so you can refine it further (shrink, move) before producing the click.
+Whether that click happens right away is controlled by the `auto-click` [behavior setting](#behavior). Holding `Shift` while pressing the key inverts it for that press, so you can refine the selection further (shrink, move) before producing the click.
 
 If you skip this step and just press a click key right away, it clicks the center of the cell (marked with a small square).
 
 #### Refine the selection
 
 - Arrow keys (or Vim direction keys) move the selection by its own size.
-- The dedicated “shrink” key (converging arrows on the diagram) halves the selection, centered. Repeat to keep narrowing it down to a single pixel.
-- The “cancel” key reverts the last step (move, shrink, or cell selection). Can be used repeatedly.
+- The dedicated `shrink` key halves the selection, centered. Repeat to keep narrowing it down to a single pixel.
+- The `cancel-selection` key reverts the last step (move, shrink, or cell selection). Can be used repeatedly.
 
 #### Produce a click
 
 - Pressing a click key (left/middle/right) clicks at the center of the current selection
 - Press the same click key twice quickly for a double click (single selection only)
-- Click keys and other shortcuts are configurable — see [Keybindings](#keybindings)
+- Click keys and other shortcuts are configurable, see [Keybindings](#keybindings)
 
-#### Selection and drag’n drop
+#### Selection and drag'n drop
 
-After a first selection, press the “next selection” key to start a second one, then click. This holds the button down and moves the pointer between the two selections.
+After a first selection, press the `next-selection` key to start a second one, then click. This holds the button down and moves the pointer between the two selections.
 
 #### Work with multiple displays
 
-`Shift` + arrow (or Vim direction) switches the active display.
+`Ctrl` + arrow (or Vim direction) switches the active display.
 
 ## Configuration
 
@@ -81,6 +90,16 @@ appearance {
 
 Colors are `#rrggbbaa` hex strings.
 
+### Behavior
+
+```kdl
+behavior {
+  auto-click #true
+}
+```
+
+- `auto-click`: whether picking a division clicks immediately, or only selects it so you can refine (shrink, move) before clicking. `Shift` inverts this for a single press. Booleans in KDL are written `#true`/`#false` (with the `#`).
+
 ### Keybindings
 
 ```kdl
@@ -88,6 +107,11 @@ binds {
   left-click space
   middle-click 8
   right-click 9
+  left h
+  down j
+  up k
+  right l
+  shrink i
   next-selection Return
   cancel-selection BackSpace
 }
@@ -96,12 +120,14 @@ binds {
 Key names are [xkbcommon keysym names](https://xkbcommon.org/doc/current/xkbcommon-keysyms_8h.html) (case-insensitive), e.g. `space`, `Return`, `BackSpace`, or a single character/digit like `8`.
 
 - `left-click` / `middle-click` / `right-click`: produce a click
+- `left` / `down` / `up` / `right`: move/narrow the selection (arrow keys always work too)
+- `shrink`: halve the current selection, centered
 - `next-selection`: start a second selection for drag'n drop
 - `cancel-selection`: revert the last selection step
 
 ## Niri configuration recommendation
 
-If you’re using niri with `focus-follows-mouse` enabled, add `max-scroll-amount="0%"` to avoid unwanted view scrolling when the synthetic pointer passes over a window that’s only partially on screen:
+If you're using niri with `focus-follows-mouse` enabled, add `max-scroll-amount="0%"` to avoid unwanted view scrolling when the synthetic pointer passes over a window that's only partially on screen:
 
 ```kdl
 input {
@@ -109,11 +135,11 @@ input {
 }
 ```
 
-Without it, niri scrolls the view to bring such a window fully into view as soon as the pointer touches it (this also happens with a real mouse — it’s normal niri behavior, just disruptive when this tool moves the pointer around).
+Without it, niri scrolls the view to bring such a window fully into view as soon as the pointer touches it. This also happens with a real mouse, it's normal niri behavior, just disruptive when this tool moves the pointer around.
 
 ## Resources
 
-This Smithay’s Toolkit example was the starting point:
+This Smithay's Toolkit example was the starting point:
 https://github.com/Smithay/client-toolkit/blob/master/examples/simple_layer.rs
 
 Protocol specifications and Rust bindings used by this project:
