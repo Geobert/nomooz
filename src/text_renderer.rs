@@ -1,4 +1,4 @@
-use crate::{color_rgba::*, draw_geometry::draw_filled_circle};
+use crate::color_rgba::*;
 use ab_glyph::{Font, FontArc, OutlinedGlyph, PxScale, ScaleFont};
 use rust_fontconfig::{FcFontCache, FcPattern};
 
@@ -69,7 +69,7 @@ impl TextRenderer {
         y: f32,
         size: f32,
         color: ColorRGBA,
-        circle_color: ColorRGBA,
+        stroke_color: ColorRGBA,
         canvas: &mut [u8],
         canvas_width: usize,
     ) {
@@ -118,25 +118,35 @@ impl TextRenderer {
         // Horizontal offset for string centering
         let mut position_x = x - width / 2.0;
 
-        for glyph in glyphes.iter() {
-            if glyph.outlined.is_some() {
-                let pen_x = position_x.round();
-                let half_width = (glyph.width) / 2.0;
-                draw_filled_circle(
-                    (pen_x + half_width).round() as i32,
-                    y as i32,
-                    (size / 2.0) as i32,
-                    circle_color,
+        position_x = x - width / 2.0;
+
+        // Stroke size = 10% of the font size
+        let stroke_width = (size * 0.1).round().max(1.0) as i32;
+
+        // Really render the string
+        for i in -stroke_width..=stroke_width {
+            for j in -stroke_width..=stroke_width {
+                Self::print_glyph(
+                    &glyphes,
+                    position_x + i as f32,
+                    y + j as f32,
+                    stroke_color,
                     canvas,
                     canvas_width,
                 );
             }
-            position_x += glyph.advance;
         }
+        Self::print_glyph(&glyphes, position_x, y, color, canvas, canvas_width);
+    }
 
-        position_x = x - width / 2.0;
-
-        // Really render the string
+    fn print_glyph(
+        glyphes: &[GlyphData],
+        mut position_x: f32,
+        y: f32,
+        color: ColorRGBA,
+        canvas: &mut [u8],
+        canvas_width: usize,
+    ) {
         for glyph in glyphes.iter() {
             let mut working_color = color.clone();
 
@@ -160,4 +170,5 @@ impl TextRenderer {
             position_x += glyph.advance;
         }
     }
+
 }
