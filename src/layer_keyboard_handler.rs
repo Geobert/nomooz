@@ -180,15 +180,16 @@ impl KeyboardHandler for MainLayer {
                 let selection = &self.selection[self.current_selection_index];
                 if selection.selected_column.is_some() && selection.selected_line.is_some() {
                     // 50/51/52 = left/middle/right click, double click included.
-                    let explicit_button = if event.keysym == keysym_to_lower(&self.bindings.left_click) {
-                        Some(ClickButton::Left)
-                    } else if event.keysym == keysym_to_lower(&self.bindings.middle_click) {
-                        Some(ClickButton::Middle)
-                    } else if event.keysym == keysym_to_lower(&self.bindings.right_click) {
-                        Some(ClickButton::Right)
-                    } else {
-                        None
-                    };
+                    let explicit_button =
+                        if event.keysym == keysym_to_lower(&self.bindings.left_click) {
+                            Some(ClickButton::Left)
+                        } else if event.keysym == keysym_to_lower(&self.bindings.middle_click) {
+                            Some(ClickButton::Middle)
+                        } else if event.keysym == keysym_to_lower(&self.bindings.right_click) {
+                            Some(ClickButton::Right)
+                        } else {
+                            None
+                        };
 
                     if let Some(button) = explicit_button {
                         if self.selection.len() == 1 {
@@ -221,20 +222,22 @@ impl KeyboardHandler for MainLayer {
                 }
 
                 // Second selection enabled on first step only.
-                if self.current_selection_index == 0 && !selection.selected_line.is_none()
-                    && event.keysym == keysym_to_lower(&self.bindings.next_selection) {
-                        log::debug!("New selection");
+                if self.current_selection_index == 0
+                    && !selection.selected_line.is_none()
+                    && event.keysym == keysym_to_lower(&self.bindings.next_selection)
+                {
+                    log::debug!("New selection");
 
-                        self.selection.push(Selection {
-                            selected_column: None,
-                            selected_line: None,
-                            selected_division: None,
-                            zones: Vec::new(),
-                            output: self.current_output.clone(),
-                        });
-                        self.current_selection_index += 1;
-                        need_draw = true;
-                    }
+                    self.selection.push(Selection {
+                        selected_column: None,
+                        selected_line: None,
+                        selected_division: None,
+                        zones: Vec::new(),
+                        output: self.current_output.clone(),
+                    });
+                    self.current_selection_index += 1;
+                    need_draw = true;
+                }
 
                 // Backspace allow to cancel the last selection step
                 if self.handle_cancel_and_confirm(&event) {

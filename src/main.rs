@@ -1,9 +1,13 @@
+mod behavior;
+mod bindings;
 mod cache;
 mod click;
 mod color_rgba;
+mod configuration;
+mod dependencies;
 mod direction;
-mod draw_grid;
 mod draw_geometry;
+mod draw_grid;
 mod geometry;
 mod labels;
 mod layer_draw;
@@ -11,15 +15,11 @@ mod layer_keyboard_handler;
 mod main_layer;
 mod selection;
 mod text_renderer;
+mod theme;
 mod virtual_pointer;
+mod wayland_resources;
 mod xkb_parser;
 mod zone;
-mod configuration;
-mod theme;
-mod bindings;
-mod behavior;
-mod dependencies;
-mod wayland_resources;
 
 use smithay_client_toolkit::{
     compositor::CompositorState,
@@ -32,12 +32,14 @@ use smithay_client_toolkit::{
 use wayland_client::{Connection, globals::registry_queue_init};
 
 use crate::{
-    behavior::Behavior, bindings::Bindings, cache::load_cache, configuration::Configuration, dependencies::Dependencies, main_layer::*, text_renderer::TextRenderer, theme::Theme, virtual_pointer::VirtualPointerManager, wayland_resources::WaylandResources, xkb_parser::XkbParser,
+    behavior::Behavior, bindings::Bindings, cache::load_cache, configuration::Configuration,
+    dependencies::Dependencies, main_layer::*, text_renderer::TextRenderer, theme::Theme,
+    virtual_pointer::VirtualPointerManager, wayland_resources::WaylandResources,
+    xkb_parser::XkbParser,
 };
 
 fn main() {
     env_logger::init();
-
 
     let config = Configuration::load_config().expect("Can’t load configuration");
     let theme = Theme::from_config(&config).expect("Can’t init theme");
@@ -50,11 +52,15 @@ fn main() {
     let mut xkb_parser = XkbParser::new();
     if let Ok(keymap) = load_cache("keymap.xkb") {
         log::debug!("Cache found for keymap");
-        xkb_parser.parse_from_string(keymap).expect("Failed to compile keymap. Maybe you should delete the cache directory.");
+        xkb_parser
+            .parse_from_string(keymap)
+            .expect("Failed to compile keymap. Maybe you should delete the cache directory.");
     }
     if let Ok(layout) = load_cache("layout.dat") {
         log::debug!("Cache found for layout");
-        let layout = layout.parse::<usize>().expect("Failed to parse layout from cache. Maybe you should delete the cache directory.");
+        let layout = layout.parse::<usize>().expect(
+            "Failed to parse layout from cache. Maybe you should delete the cache directory.",
+        );
         xkb_parser.set_layout(layout);
     }
 
